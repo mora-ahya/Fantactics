@@ -54,11 +54,11 @@ namespace MyInitSet
                 return -1;
 
             int result = 0;
-            result += (bit | 0xffff0000) != 0 ? 16 : 0;
-            result += (bit | 0xff00ff00) != 0 ? 8 : 0;
-            result += (bit | 0xf0f0f0f0) != 0 ? 4 : 0;
-            result += (bit | 0xcccccccc) != 0 ? 2 : 0;
-            result += (bit | 0xaaaaaaaa) != 0 ? 1 : 0;
+            result += (bit & 0xffff0000) != 0 ? 16 : 0;
+            result += (bit & 0xff00ff00) != 0 ? 8 : 0;
+            result += (bit & 0xf0f0f0f0) != 0 ? 4 : 0;
+            result += (bit & 0xcccccccc) != 0 ? 2 : 0;
+            result += (bit & 0xaaaaaaaa) != 0 ? 1 : 0;
             return result;
         }
     }

@@ -10,6 +10,10 @@ namespace FantacticsScripts
 
         System.Action process;
 
+        [SerializeField] Board board = default;
+        [SerializeField] CameraManager cameraManager = default;
+        [SerializeField] PhaseNotice phaseNotice = default;
+        [SerializeField] PhaseBase[] phases = default;
         public Player[] players;//オンライン形式ならintのプレイヤーidで良いかも
         Character[] characters;//playerと辞書形式にできるかも
         System.Tuple<int, int>[] playerSegments; //カードのidを受け取る。オンラインでやる場合は...
@@ -22,25 +26,27 @@ namespace FantacticsScripts
         bool signal;
         Phase currentPhase;
 
-        private void Start()
+        void Start()
         {
-            process = WaitPlayerSegments;
+            board.Initialize();
+            board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquares(BoardDirection.Right).Number, true);
+            board.ApplayRedBitFlag();
             playerSegments = new System.Tuple<int, int>[6];
-            actionOrder = new int[6] {0, 1, 2, 3, 4, 5 };
+            actionOrder = new int[6] { 0, 1, 2, 3, 4, 5 };
             cards = new CardInfomation[6];
             characters = new Character[6];
             characters[0] = new TestCharacter();
-
-            for (int i = 0; i < testCards.Length; i++)
-            {
-                testCards[i].SetCardInfo(characters[0].GetCard(i));
-                Debug.Log(testCards[i].CardInfo);
-            }
+            players[0].Initialize(characters[0]);
+            currentPhase = Phase.PlottingPhase;
+            phaseNotice.DisplayPhaseNotice(currentPhase);
+            process = WaitPhaseNoticeProcess;
         }
 
-        private void Update()
+        void Update()
         {
+            players[0].Act();
             process();
+            //cameraManager.FreeMode();
         }
 
         void Process()
@@ -48,9 +54,12 @@ namespace FantacticsScripts
             process();
         }
 
-        void ActionPlayer()
+        /// <summary>
+        /// プレイヤーがアクションを起こすプロセス
+        /// </summary>
+        void ActionPlayerProcess()
         {
-            //players[currentPlayerID].Act();
+            players[currentPlayerID].Act();
 
             if (!players[currentPlayerID].Signal)
                 return;
@@ -61,13 +70,18 @@ namespace FantacticsScripts
                 if (currentSegment == 0)
                 {
                     currentSegment++;
-                    ConvertSegmentIDIntoCard(currentSegment);
+                    ConvertCardIDIntoCardInfomation(currentSegment);
                     DecideActionOrder();
                     AllocateTurnToPlayer();
                     return;
                 }
                 currentSegment = 0;
-                process = WaitPlayerSegments;
+                process = WaitPhaseNoticeProcess;
+                currentPhase = Phase.PlottingPhase;
+                phaseNotice.DisplayPhaseNotice(currentPhase);
+                for (int i = 0; i < maxPlayer; i++)
+                    players[i].StartTurn(currentPhase);
+                
                 return;
             }
             turn++;
@@ -75,23 +89,47 @@ namespace FantacticsScripts
 
         }
 
-        void WaitPlayerSegments()
+        /// <summary>
+        /// プレイヤーが使用カードを選択するのを待つプロセス
+        /// </summary>
+        void WaitPlayerSegmentsProcess()
         {
+            /*
+            for (int i = 0; i < maxPlayer; i++)
+                players[i].Act();*/
+
             if (!WaitPlayers())
                 return;
 
             GetPlayerSegments();
-            ConvertSegmentIDIntoCard(currentSegment);
+            ConvertCardIDIntoCardInfomation(currentSegment);
             DecideActionOrder();
             AllocateTurnToPlayer();
-            process = ActionPlayer;
+        }
+
+        void WaitPhaseNoticeProcess()
+        {
+            if (!phaseNotice.IsActing)
+            {
+                if (currentPhase == Phase.PlottingPhase)
+                {
+                    process = WaitPlayerSegmentsProcess;
+                }
+                else
+                {
+                    process = ActionPlayerProcess;
+                }
+                return;
+            }
+
+            phaseNotice.Act();
         }
 
         bool WaitPlayers()
         {
-            foreach (Player player in players)
+            for (int i = 0; i < maxPlayer; i++)
             {
-                if (!player.Signal)
+                if (!players[i].Signal)
                     return false;
             }
             return true;
@@ -110,10 +148,10 @@ namespace FantacticsScripts
         }
 
         /// <summary>
-        /// 受け取ったセグメントをカード情報に変換する
+        /// 受け取ったカードIDをカード情報に変換する
         /// </summary>
         /// <param name="segment"></param>
-        void ConvertSegmentIDIntoCard(int segment)
+        void ConvertCardIDIntoCardInfomation(int segment)
         {
             if (segment == 0)
             {
@@ -131,7 +169,7 @@ namespace FantacticsScripts
         }
 
         /// <summary>
-        /// セグメントから行動順を決定する
+        /// カード情報から行動順を決定する
         /// </summary>
         void DecideActionOrder()
         {
@@ -164,13 +202,42 @@ namespace FantacticsScripts
         }
 
         /// <summary>
-        /// プレイヤーにactionOrder順にターンを割り振る
+        /// actionOrderに従って、プレイヤーにターンを割り振る
         /// </summary>
         void AllocateTurnToPlayer()
         {
             currentPlayerID = actionOrder[turn];
-            players[currentPlayerID].SetPhase(cards[currentPlayerID].Type);
+            if (currentPhase != ChangeCardTypeToPhase(cards[currentPlayerID].Type))
+            {
+                currentPhase = ChangeCardTypeToPhase(cards[currentPlayerID].Type);
+                phaseNotice.DisplayPhaseNotice(currentPhase);
+                process = WaitPhaseNoticeProcess;
+            }
+            players[currentPlayerID].StartTurn(currentPhase, currentSegment);
             signal = true;
+        }
+
+        /// <summary>
+        /// CardTypeをPhaseに変える
+        /// </summary>
+        /// <param name="cardType"></param>
+        /// <returns></returns>
+        Phase ChangeCardTypeToPhase(CardType cardType)
+        {
+            switch (cardType)
+            {
+                case CardType.Move:
+                    return Phase.MovePhase;
+
+                case CardType.Melee:
+                    return Phase.MeleePhase;
+
+                case CardType.Range:
+                    return Phase.RangePhase;
+
+                default:
+                    return 0;
+            }
         }
     }
 }

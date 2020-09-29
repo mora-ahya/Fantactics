@@ -10,20 +10,34 @@ namespace FantacticsScripts
         static readonly string testCase = "{0} : up...{1}, right...{2}, down...{3}, left...{4}";
 
         public int test;
-        int number;
+        public int Number { get; private set; }
+        public int TeamOfHavingPlayer { get; private set; }
+        public int ConsumptionOfMobility { get; private set; } = 1;
 
         Square[] adjacentSquares = new Square[4];
 
-        public int Number => number;
-        public Square[] AdjacentSquares => adjacentSquares;
-
         public void Initialize(Square upSquare, Square rightSquare, Square downSquare, Square leftSquare, int num)
         {
-            number = num;
+            Number = num;
             adjacentSquares[(int)BoardDirection.Up] = upSquare;
             adjacentSquares[(int)BoardDirection.Right] = rightSquare;
             adjacentSquares[(int)BoardDirection.Down] = downSquare;
             adjacentSquares[(int)BoardDirection.Left] = leftSquare;
+        }
+
+        public Square GetAdjacentSquares(BoardDirection dir)
+        {
+            return adjacentSquares[(int)dir];
+        }
+
+        public void PlayerEnter(int teamNum)
+        {
+            TeamOfHavingPlayer = teamNum;
+        }
+
+        public void PlayerExit()
+        {
+            TeamOfHavingPlayer = 0;
         }
 
         /// <summary>
@@ -31,7 +45,7 @@ namespace FantacticsScripts
         /// </summary>
         public void RaiseBit(int[] board)
         {
-            board[number / 32] |= 1 << number % 32;
+            board[Number / 32] |= 1 << Number % 32;
         }
 
         /// <summary>
@@ -39,7 +53,7 @@ namespace FantacticsScripts
         /// </summary>
         public void LowerBit(int[] board)
         {
-            board[number / 32] &= (board[number / 32] ^ (1 << number % 32));
+            board[Number / 32] &= (board[Number / 32] ^ (1 << Number % 32));
         }
 
         /// <summary>
@@ -52,8 +66,8 @@ namespace FantacticsScripts
 
         public static int ManhattanDistance(Square square1, Square square2)
         {
-            return Mathf.Abs(square1.number / Board.BoardWidth - square2.number / Board.BoardWidth)
-                + Mathf.Abs(square1.number % Board.BoardWidth - square2.number % Board.BoardWidth);
+            return Mathf.Abs(square1.Number / Board.Width - square2.Number / Board.Width)
+                + Mathf.Abs(square1.Number % Board.Width - square2.Number % Board.Width);
         }
     }
 }

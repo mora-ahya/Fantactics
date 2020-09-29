@@ -7,7 +7,8 @@ namespace FantacticsScripts
     public class CardInfomation
     {
         public Sprite CardSprite { get; protected set; }
-        public Vector2Int Range { get; protected set; } = new Vector2Int();
+        public int minRange { get; protected set; }
+        public int maxRange { get; protected set; }
         public int Blast { get; protected set; }
         public int Damage { get; protected set; }
         public string Name { get; protected set; }
@@ -25,10 +26,11 @@ namespace FantacticsScripts
         /// <param name="name"></param>
         /// <param name="id"></param>
         /// <param name="type"></param>
-        public CardInfomation(Sprite sprite = null, int minRange = 1, int maxRange = 1, int blast = 0, int damage = 1, string name = null, int id = -1, CardType type = 0)
+        public CardInfomation(Sprite sprite = null, int minRan = 1, int maxRan = 1, int blast = 0, int damage = 1, string name = null, int id = -1, CardType type = 0)
         {
             CardSprite = sprite;
-            Range.Set(minRange, maxRange);
+            minRange = minRan;
+            maxRange = maxRan;
             Blast = blast;
             Damage = damage;
             Name = name;

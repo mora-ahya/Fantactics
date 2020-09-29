@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace FantacticsScripts {
+namespace FantacticsScripts
+{
     public class TestCharacter : Character
     {
         public TestCharacter()
         {
             Hp = 3;
             Initiative = 3;
-            MovePower = 1;
+            Mobility = 1;
             DefensePower = 0;//防御可能回数
             Imagination = 3;
             AssaultPower = 0;//突進ダメージ

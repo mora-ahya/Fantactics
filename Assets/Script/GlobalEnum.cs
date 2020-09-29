@@ -5,7 +5,8 @@ namespace FantacticsScripts
 {
     public enum Phase
     {
-        SelectSegmentsPhase,
+        WaitingPhase,
+        PlottingPhase,
         MovePhase,
         RangePhase,
         MeleePhase,
