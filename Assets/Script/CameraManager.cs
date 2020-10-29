@@ -21,6 +21,7 @@ namespace FantacticsScripts
         void Awake()
         {
             Instance = this;
+            mode = FollowMode;
         }
 
         public void SetPosition(int squareNumber)
@@ -38,28 +39,6 @@ namespace FantacticsScripts
         public void SetTarget(GameObject t)
         {
             Target = t;
-        }
-
-        public void MoveSquare(BoardDirection dir)
-        {
-            switch (dir)
-            {
-                case BoardDirection.Up:
-                    transform.position += Vector3.forward * Square.Side;
-                    break;
-
-                case BoardDirection.Right:
-                    transform.position += Vector3.right * Square.Side;
-                    break;
-
-                case BoardDirection.Down:
-                    transform.position += Vector3.back * Square.Side;
-                    break;
-
-                case BoardDirection.Left:
-                    transform.position += Vector3.left * Square.Side;
-                    break;
-            }
         }
 
         public void Act()

@@ -4,39 +4,59 @@ using UnityEngine;
 
 namespace FantacticsScripts
 {
-    public class RangePhase : MonoBehaviour
+    public class RangePhase : Phase
     {
 
         [SerializeField] Board board = default;
+        [SerializeField] GameObject directionUI = default;
+        [SerializeField] SquareTarget squareTarget = default;
         int startSquare;
         int targetSquare;
         CardInfomation usedCardInformation;
-        bool decideTarget;
+        bool duringTheMove;
 
-        public virtual void Initialize()
+        void Awake()
         {
-
+            result = new byte[2];
         }
 
-        public virtual void EndProcess()
+        public override void Initialize()
         {
-
+            startSquare = player.Information.CurrentSquare;
+            targetSquare = startSquare;
+            usedCardInformation = player.GetPlot();
+            squareTarget.Initialize(player.transform, MoveAim, EndMove);
+            UIManager.Instance.SwitchUI(PhaseEnum.RangePhase, true);
         }
 
-        public virtual void Act()
+        public override byte[] EndProcess()
         {
-
+            UIManager.Instance.SwitchUI(PhaseEnum.RangePhase, false);
+            directionUI.SetActive(false);
+            result[1] = (byte)targetSquare;
+            return result;
         }
 
-        public void MoveAim(int n)
+        public override void Act()
         {
-            if (!board.CanMoveToDirection(targetSquare, BoardDirection.Up + n))
+            squareTarget.Act();
+        }
+
+        void EndMove()
+        {
+            directionUI.SetActive(true);
+            duringTheMove = false;
+        }
+
+        public void MoveAim(int dir)
+        {
+            if (!board.CanMoveToDirection(targetSquare, BoardDirection.Up + dir))
             {
                 Debug.Log("Nothing Square!");
                 return;
             }
 
-            int tmp = board.GetSquare(targetSquare).GetAdjacentSquares(BoardDirection.Up + n).Number;
+            int tmp = board.GetSquare(targetSquare).GetAdjacentSquares(BoardDirection.Up + dir).Number;
 
             if (board.GetManhattanDistance(startSquare, tmp) > usedCardInformation.maxRange)
             {
@@ -44,8 +64,8 @@ namespace FantacticsScripts
                 return;
             }
 
+            squareTarget.StartMove(BoardDirection.Up + dir);
             targetSquare = tmp;
-            CameraManager.Instance.MoveSquare(BoardDirection.Up + n);
         }
 
         public void DecideTarget()
@@ -56,10 +76,8 @@ namespace FantacticsScripts
                 Debug.Log("Over Range!");
                 return;
             }
-
-            CameraManager.Instance.SetPosition(transform);
-            UIManager.Instance.SwitchUI(Phase.RangePhase, false);
             usedCardInformation = null;
+            player.EndTurn();
             Debug.Log("You attack this square!!");
         }
     }

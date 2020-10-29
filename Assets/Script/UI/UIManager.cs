@@ -11,27 +11,30 @@ namespace FantacticsScripts
         [SerializeField] GameObject selectSegmentsPhaseUI = default;
         [SerializeField] GameObject movePhaseUI = default;
         [SerializeField] GameObject rangeMeleePhaseUI = default;
+        [SerializeField] GameObject directoinButtons = default;
 
         void Awake()
         {
             Instance = this;
         }
 
-        public void SwitchUI(Phase p, bool on)
+        public void SwitchUI(PhaseEnum p, bool on)
         {
             switch (p)
             {
-                case Phase.PlottingPhase:
+                case PhaseEnum.PlottingPhase:
                     selectSegmentsPhaseUI.SetActive(on);
                     break;
 
-                case Phase.MovePhase:
+                case PhaseEnum.MovePhase:
                     movePhaseUI.SetActive(on);
+                    directoinButtons.SetActive(on);
                     break;
 
-                case Phase.RangePhase:
-                case Phase.MeleePhase:
+                case PhaseEnum.RangePhase:
+                case PhaseEnum.MeleePhase:
                     rangeMeleePhaseUI.SetActive(on);
+                    directoinButtons.SetActive(on);
                     break;
             }
         }

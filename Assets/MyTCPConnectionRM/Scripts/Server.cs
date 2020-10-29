@@ -112,9 +112,11 @@ public class Server
     /// <param name="data"></param>
     public void StartSend(Socket client, byte[] data)
     {
-        StateObject state = new StateObject();
-        state.workSocket = client;
-        state.buffer = data;
+        StateObject state = new StateObject
+        {
+            workSocket = client,
+            buffer = data
+        };
         client.BeginSend(state.buffer, 0, state.buffer.Length, 0, new AsyncCallback(SendDataCallback), state);
     }
 

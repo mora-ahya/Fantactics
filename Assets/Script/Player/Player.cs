@@ -8,213 +8,64 @@ namespace FantacticsScripts
 {
     public class Player : MonoBehaviour
     {
-        public int PlayerID { get; set; }
-        public bool Signal { get; private set; }
-        public int Team { get; private set; }
         System.Action phase;
 
-        int currentSquare;
+        public PlayerInformation Information { get; private set; }
+        public CharacterAnimation CharaAnim => charaAnim;
+        Phase currentPhase;
+        [SerializeField] CharacterAnimation charaAnim = default;
         [SerializeField] Board board = default;
-        [SerializeField] GameObject directionUI = default;
+        [SerializeField] OfflineGameScene gameScene = default;
 
-        //MovePhase
-        [SerializeField] CameraManager cameraManager = default;
-        [SerializeField] UIManager uiManager = default;
-
-        BoardDirection[] moveDirectionHistories = new BoardDirection[6]; //chara毎に大きさ変える
-        BoardDirection moveDirection;
-        int mobility;
-        int NumberOfMoves;
-        bool decideDestination;
-        float moveAmountBetweenSquares;
-        float charaMoveSpeed = 1f;
-
-        //PlottingPhase
-        int numberOfHands = 0;
-        Card heldCard;
-        Card selectedCard;
-        Card[] actions = new Card[2];
-        [SerializeField] BoxCollider2D[] cardFrames = default; //colliderに
-        [SerializeField] RectTransform centerOfHandObjects = default;
-        Vector3 clickPoint;
-
-        //RangePhase
-        int startSquare;
-        int targetSquare;
-        CardInfomation usedCardInformation;
-        bool decideTarget;
-
-        //CardOperation
-        Character character;
-        [SerializeField] Card[] handObjects; //一番手札が多いキャラクターに合わせる
-        int deck;
-        int hands;
-        int discards;
-        int exclusionCards;
-        int equipments;
-
-        public void Initialize(Character c)
+        public void Initialize(PlayerInformation pInfo)
         {
             phase = null;
-            character = c;
-            for (int i = 0; i < handObjects.Length; i++)
-            {
-                handObjects[i].Number = i;
-            }
-            deck = (1 << character.Hp) - 1;
-            Debug.Log("山札：" + System.Convert.ToString(deck, 2));
             //DrawCards();
-            currentSquare = 5;
-            board.GetSquare(currentSquare).PlayerEnter(Team);
-            transform.position = new Vector3(currentSquare % Board.Width + 0.5f, 0, currentSquare / Board.Width + 0.5f) * Square.Side;
+            Information = pInfo;
+            Information.Deck = (1 << Information.Chara.Hp) - 1;
+            Information.SetCurrentSquare(5);
+            board.GetSquare(Information.CurrentSquare).PlayerEnter(Information.PlayerID);
+            transform.position = new Vector3(Information.CurrentSquare % Board.Width + 0.5f, 0, Information.CurrentSquare / Board.Width + 0.5f) * Square.Side;
             transform.position += Vector3.up;
-            PlottingPhaseInit();
+            //PlottingPhaseInit();
         }
 
         public void Act()
         {
-            phase?.Invoke();
-            cameraManager.Act();
+            //phase?.Invoke();
+            currentPhase?.Act();
+        }
+
+        public void StartTurn(PhaseEnum p, int segment = 0)
+        {
+            //currentPhase = p;
+            //UIManager.Instance.SwitchUI(p, true);
+            Debug.Log("Your Turn!");
         }
 
         public void StartTurn(Phase p, int segment = 0)
         {
-            switch (p)
-            {
-                case Phase.PlottingPhase:
-                    Debug.Log("SelectSegmentsPhase");
-                    PlottingPhaseInit();
-                    break;
-                case Phase.MovePhase:
-                    Debug.Log("Move Phase!");
-                    phase = MovePhase;
-                    directionUI.SetActive(true);
-                    board.GetSquare(currentSquare).PlayerExit();
-                    break;
-
-                case Phase.RangePhase:
-                case Phase.MeleePhase:
-                    Debug.Log("Range Phase!");
-                    SetUsedCard(segment);
-                    directionUI.SetActive(true);
-                    startSquare = currentSquare;
-                    targetSquare = startSquare;
-                    phase = RangePhase;
-                    break;
-            }
-            uiManager.SwitchUI(p, true);
-            Debug.Log("Your Turn!");
-            Signal = false;
+            currentPhase = p;
+            currentPhase.Initialize();
         }
 
-        /// <summary>
-        /// PlottingPhaseの実装セット
-        /// </summary>
-        #region PlottingPhase
-
-        void PlottingPhaseInit()
+        public void EndTurn()
         {
-            phase = PlottingPhase;
-            actions[0] = null;
-            actions[1] = null;
-            heldCard = null;
-            ThrowAwayHands();
-            DrawCards();
-            ResetHandObjectsPosition();
+            byte[] result = currentPhase.EndProcess();
+            currentPhase = null;
+            gameScene.NotifyPhaseEnd(result);
         }
 
-        void PlottingPhase()
+        public CardInfomation GetPlot()
         {
-            if (Input.GetMouseButtonUp(0) && heldCard != null)
-                SetActions();
-            
-            if (!Input.GetMouseButton(0))
-                return;
-
-            if (Input.GetMouseButtonDown(0))
-                GrabCard();
-            
-            if (heldCard != null)
-            {
-                heldCard.transform.position = Input.mousePosition;
-                return;
-            }
-
-            if ((clickPoint - Input.mousePosition).magnitude > 10.0f)
-                heldCard = selectedCard;
-            
+            return Information.GetPlot(gameScene.CurrentSegment);
         }
-
-        /// <summary>
-        /// カードを選択状態にするかしないかの関数
-        /// </summary>
-        void GrabCard()
-        {
-            if (selectedCard != null)
-            {
-                selectedCard.transform.position -= Vector3.up * Card.Height / 4;
-                selectedCard = null;
-            }
-
-            clickPoint = Input.mousePosition;
-            int index = (int)Mathf.Floor((clickPoint.x - Screen.width / 2) / (Card.Width + Card.Padding) + numberOfHands / 2f);
-            index = Mathf.Clamp(index, 0, numberOfHands - 1);
-            Card tmp = handObjects[index];
-
-            if (tmp.OnMouse(clickPoint) && tmp.CardInfo != actions[0]?.CardInfo && tmp.CardInfo != actions[1]?.CardInfo)
-            {
-                selectedCard = tmp;
-                selectedCard.transform.position += Vector3.up * Card.Height / 4;
-            }
-        }
-
-        void SetActions()
-        {
-            int index = (Input.mousePosition.x < Screen.width / 2) ? 0 : 1;
-            if (cardFrames[index].OverlapPoint(Input.mousePosition))
-            {
-                if (actions[index] != null)
-                {
-                    actions[index].ResetPosition((numberOfHands - 1) / 2f);
-                }
-                actions[index] = heldCard;
-                heldCard.transform.position = cardFrames[index].transform.position;
-                selectedCard = null;
-            }
-            else
-            {
-                heldCard.ResetPosition((numberOfHands - 1) / 2f);
-                heldCard.transform.position += Vector3.up * Card.Height / 4;
-            }
-
-            heldCard = null;
-        }
-
-        public void DecideSegments()
-        {
-            if (actions[0] == null || actions[1] == null)
-                return;
-
-            Signal = true;
-            uiManager.SwitchUI(Phase.PlottingPhase, false);
-        }
-
-        /// <summary>
-        /// 選んだカードのIDをタプルでサーバに送る
-        /// </summary>
-        /// <returns></returns>
-        public System.Tuple<int, int> GetSegmentsID()
-        {
-            return System.Tuple.Create(actions[0].CardInfo.ID, actions[1].CardInfo.ID);
-        }
-
-        #endregion
 
         /// <summary>
         /// MovePhaseの実装セット
         /// </summary>
         #region MovePhase
-
+        /*
         public void SetDirection(int dir)
         {
             if (decideDestination)
@@ -263,7 +114,6 @@ namespace FantacticsScripts
 
         public void SetMoveAmount()
         {
-            cameraManager.SetPosition(transform);
             mobility = 4;
             NumberOfMoves = 0;
             Debug.Log("You Got 4 Mobilities!");
@@ -283,7 +133,7 @@ namespace FantacticsScripts
 
             directionUI.SetActive(false);
             board.GetSquare(currentSquare).PlayerEnter(Team);
-            uiManager.SwitchUI(Phase.MovePhase, false);
+            UIManager.Instance.SwitchUI(PhaseEnum.MovePhase, false);
             NumberOfMoves = 0;
             mobility = 0;
             Signal = true;
@@ -324,7 +174,6 @@ namespace FantacticsScripts
             {
                 MoveBetweenSquares(transform, moveDirection, charaMoveSpeed);
             }
-            cameraManager.SetPosition(transform);
         }
 
         void MoveBetweenSquares(Transform t, BoardDirection dir, float amount)
@@ -356,177 +205,176 @@ namespace FantacticsScripts
 
             MoveToDestination();
         }
-
+        */
         #endregion
 
         /// <summary>
         /// RangePhaseの実装セット
         /// </summary>
         #region RangePhase
+        /*
+    public void SetUsedCard(int segment)
+    {
+        usedCardInformation = actions[segment].CardInfo;
+    }
 
-        public void SetUsedCard(int segment)
+    public void MoveAim(int n)
+    {
+        if (!board.CanMoveToDirection(targetSquare, BoardDirection.Up + n))
         {
-            usedCardInformation = actions[segment].CardInfo;
+            Debug.Log("Nothing Square!");
+            return;
         }
 
-        public void MoveAim(int n)
+        int tmp = board.GetSquare(targetSquare).GetAdjacentSquares(BoardDirection.Up + n).Number;
+
+        if (board.GetManhattanDistance(startSquare, tmp) > usedCardInformation.maxRange)
         {
-            if (!board.CanMoveToDirection(targetSquare, BoardDirection.Up + n))
-            {
-                Debug.Log("Nothing Square!");
-                return;
-            }
-
-            int tmp = board.GetSquare(targetSquare).GetAdjacentSquares(BoardDirection.Up + n).Number;
-
-            if (board.GetManhattanDistance(startSquare, tmp) > usedCardInformation.maxRange)
-            {
-                Debug.Log("Over move!");
-                return;
-            }
-
-            targetSquare = tmp;
-            cameraManager.MoveSquare(BoardDirection.Up + n);
+            Debug.Log("Over move!");
+            return;
         }
 
-        public void DecideTarget()
-        {
-            int dis = board.GetManhattanDistance(startSquare, targetSquare);
-            if (dis > usedCardInformation.maxRange || dis < usedCardInformation.minRange)
-            {
-                Debug.Log("Over Range!");
-                return;
-            }
+        targetSquare = tmp;
+    }
 
-            cameraManager.SetPosition(transform);
-            uiManager.SwitchUI(Phase.RangePhase, false);
-            usedCardInformation = null;
-            Signal = true;
-            phase = null;
-            Debug.Log("You attack this square!!");
+    public void DecideTarget()
+    {
+        int dis = board.GetManhattanDistance(startSquare, targetSquare);
+        if (dis > usedCardInformation.maxRange || dis < usedCardInformation.minRange)
+        {
+            Debug.Log("Over Range!");
+            return;
         }
 
-        void RangePhase()
+        UIManager.Instance.SwitchUI(PhaseEnum.RangePhase, false);
+        usedCardInformation = null;
+        Signal = true;
+        phase = null;
+        Debug.Log("You attack this square!!");
+    }
+
+    void RangePhase()
+    {
+        if (!decideTarget)
+            return;
+
+    }
+
+    #endregion
+
+    #region CardOperation
+    /*
+    /// <summary>
+    /// 山札から規定数のカードを手札に加える(ランダム)
+    /// </summary>
+    void DrawCards()
+    {
+        int i;
+        int count = 0;
+        while (count != character.Imagination)
         {
-            if (!decideTarget)
-                return;
+            if (deck == 0)
+                ReturnDeckFromDiscards();
+
+            if (deck == 0)
+                break;
+            i = BitCalculation.GetNthBit(deck, Random.Range(0, BitCalculation.BitCount(deck)));
+            deck &= ~i;
+            hands |= i;
+            handObjects[count].SetCardInfo(character.GetCard(BitCalculation.CheckWhichBitIsOn(i)));
+            count++;
+        }
+        numberOfHands = count;
+    }
+
+    /// <summary>
+    /// 捨て札をすべて山札に戻す
+    /// </summary>
+    void ReturnDeckFromDiscards()
+    {
+        deck = discards;
+        discards = 0;
+    }
+
+    /// <summary>
+    /// 手札を捨てる
+    /// </summary>
+    void ThrowAwayHands()
+    {
+        discards |= hands;
+        hands = 0;
+    }
+
+    /// <summary>
+    /// 山札からランダムなカードを除外する
+    /// </summary>
+    /// <param name="num"></param>
+    void ExcludeFromDeck(int num)
+    {
+        int i;
+        int count = 0;
+        while (count != num)
+        {
+            if (deck == 0)
+                ReturnDeckFromDiscards();
+
+            i = BitCalculation.GetNthBit(deck, Random.Range(0, BitCalculation.BitCount(deck)));
+            deck &= ~i;
+            exclusionCards |= i;
 
         }
+    }
 
-        #endregion
+    /// <summary>
+    /// 手札から指定したカードを除外する
+    /// </summary>
+    /// <param name="num"></param>
+    void ExcludeFromHands(int num)
+    {
+        int tmp = BitCalculation.GetNthBit(hands, num);
+        hands &= ~tmp;
+        exclusionCards |= tmp;
+    }
 
-        #region CardOperation
+    /// <summary>
+    /// 装備から指定したものを除外する
+    /// </summary>
+    /// <param name="num"></param>
+    void ExcludeFromEquipments(int num)
+    {
+        equipments &= ~(1 << num);
+    }
 
-        /// <summary>
-        /// 山札から規定数のカードを手札に加える(ランダム)
-        /// </summary>
-        void DrawCards()
+    /// <summary>
+    /// 除外カードを指定数山札に戻す(ランダム)
+    /// </summary>
+    /// <param name="amount"></param>
+    void ReturnDeckFromExclusionCards(int amount)
+    {
+        if (exclusionCards == 0)
+            return;
+        Debug.Log("山札：" + System.Convert.ToString(deck, 2));
+        int i = BitCalculation.GetNthBit(exclusionCards, Random.Range(0, BitCalculation.BitCount(exclusionCards)));
+        while (amount-- > 0 && exclusionCards != 0)
         {
-            int i;
-            int count = 0;
-            while (count != character.Imagination)
-            {
-                if (deck == 0)
-                    ReturnDeckFromDiscards();
+            exclusionCards &= ~i;
+            deck |= i;
 
-                if (deck == 0)
-                    break;
-                i = BitCalculation.GetNthBit(deck, Random.Range(0, BitCalculation.BitCount(deck)));
-                deck &= ~i;
-                hands |= i;
-                handObjects[count].SetCardInfo(character.GetCard(BitCalculation.CheckWhichBitIsOn(i)));
-                count++;
-            }
-            numberOfHands = count;
+            i = BitCalculation.GetNthBit(exclusionCards, Random.Range(0, BitCalculation.BitCount(exclusionCards)));
         }
 
-        /// <summary>
-        /// 捨て札をすべて山札に戻す
-        /// </summary>
-        void ReturnDeckFromDiscards()
+        Debug.Log("山札：" + System.Convert.ToString(deck, 2));
+    }
+
+    void ResetHandObjectsPosition()
+    {
+        float half = (numberOfHands - 1) / 2f;
+        for (int j = 0; j < numberOfHands; j++)
         {
-            deck = discards;
-            discards = 0;
+            handObjects[j].ResetPosition(half);
         }
-
-        /// <summary>
-        /// 手札を捨てる
-        /// </summary>
-        void ThrowAwayHands()
-        {
-            discards |= hands;
-            hands = 0;
-        }
-
-        /// <summary>
-        /// 山札からランダムなカードを除外する
-        /// </summary>
-        /// <param name="num"></param>
-        void ExcludeFromDeck(int num)
-        {
-            int i;
-            int count = 0;
-            while (count != num)
-            {
-                if (deck == 0)
-                    ReturnDeckFromDiscards();
-
-                i = BitCalculation.GetNthBit(deck, Random.Range(0, BitCalculation.BitCount(deck)));
-                deck &= ~i;
-                exclusionCards |= i;
-
-            }
-        }
-
-        /// <summary>
-        /// 手札から指定したカードを除外する
-        /// </summary>
-        /// <param name="num"></param>
-        void ExcludeFromHands(int num)
-        {
-            int tmp = BitCalculation.GetNthBit(hands, num);
-            hands &= ~tmp;
-            exclusionCards |= tmp;
-        }
-
-        /// <summary>
-        /// 装備から指定したものを除外する
-        /// </summary>
-        /// <param name="num"></param>
-        void ExcludeFromEquipments(int num)
-        {
-            equipments &= ~(1 << num);
-        }
-
-        /// <summary>
-        /// 除外カードを指定数山札に戻す(ランダム)
-        /// </summary>
-        /// <param name="amount"></param>
-        void ReturnDeckFromExclusionCards(int amount)
-        {
-            if (exclusionCards == 0)
-                return;
-            Debug.Log("山札：" + System.Convert.ToString(deck, 2));
-            int i = BitCalculation.GetNthBit(exclusionCards, Random.Range(0, BitCalculation.BitCount(exclusionCards)));
-            while (amount-- > 0 && exclusionCards != 0)
-            {
-                exclusionCards &= ~i;
-                deck |= i;
-
-                i = BitCalculation.GetNthBit(exclusionCards, Random.Range(0, BitCalculation.BitCount(exclusionCards)));
-            }
-
-            Debug.Log("山札：" + System.Convert.ToString(deck, 2));
-        }
-
-        void ResetHandObjectsPosition()
-        {
-            float half = (numberOfHands - 1) / 2f;
-            for (int j = 0; j < numberOfHands; j++)
-            {
-                handObjects[j].ResetPosition(half);
-            }
-        }
+    }
+    */
         #endregion
     }
 }

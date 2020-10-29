@@ -51,26 +51,26 @@ namespace FantacticsScripts
             IsActing = false;
         }
 
-        public void DisplayPhaseNotice(Phase p)
+        public void DisplayPhaseNotice(PhaseEnum p)
         {
             switch (p)
             {
-                case Phase.PlottingPhase:
+                case PhaseEnum.PlottingPhase:
                     text.text = StringNameSegmentPhase;
                     image.color = Color.yellow;
                     break;
 
-                case Phase.MovePhase:
+                case PhaseEnum.MovePhase:
                     text.text = StringNameMovePhase;
                     image.color = Color.green;
                     break;
 
-                case Phase.RangePhase:
+                case PhaseEnum.RangePhase:
                     text.text = StringNameRangePhase;
                     image.color = Color.blue;
                     break;
 
-                case Phase.MeleePhase:
+                case PhaseEnum.MeleePhase:
                     text.text = StringNameMovePhase;
                     image.color = Color.red;
                     break;

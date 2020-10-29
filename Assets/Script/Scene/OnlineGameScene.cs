@@ -5,11 +5,12 @@ using MyInitSet;
 
 namespace FantacticsScripts
 {
-    public class OfflineGameScene : GameScene
+    public class OnlineGameScene : GameScene
     {
         public Card[] testCards;
 
         System.Action process;
+        Client client;
 
         [SerializeField] Board board = default;
         [SerializeField] PhaseNotice phaseNotice = default;
@@ -39,7 +40,7 @@ namespace FantacticsScripts
         void Update()
         {
             Process();
-            
+
         }
 
         void Process()
@@ -52,28 +53,21 @@ namespace FantacticsScripts
                 phaseNotice.Act();
         }
 
-        public void SetCharacter(int charaNum)
-        {
-
-        }
-
         public override void NotifyPhaseEnd(byte[] result)
         {
-            currentAnimation = players[currentPlayerID].CharaAnim;
+            client.StartSend(result);
+        }
 
+        void SendPlayerActionEvent(object sender)
+        {
             switch (currentPhase)
             {
                 case PhaseEnum.PlottingPhase:
-                    for (int i = 0; i < maxPlayer - 1; i++)
-                    {
-                        //autoPlayerがプロットを決める
-                    }
                     DecideActionOrder();
                     AllocateTurnToPlayer();
                     break;
 
                 case PhaseEnum.MovePhase:
-                    currentAnimation.SetMovement(result);
                     process = WaitCharacterAnimation;
                     break;
 
@@ -85,6 +79,11 @@ namespace FantacticsScripts
                     process = WaitCharacterAnimation;
                     break;
             }
+        }
+
+        void ReceiveDataFromServerEvent(object sender, byte[] data)
+        {
+
         }
 
         void TransitionToTheNextTurn()
@@ -209,7 +208,7 @@ namespace FantacticsScripts
             }
         }
 
-        
+
         /// <summary>
         /// 山札から規定数のカードを手札に加える(ランダム)
         /// </summary>

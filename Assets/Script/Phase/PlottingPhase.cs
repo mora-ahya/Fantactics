@@ -4,21 +4,23 @@ using UnityEngine;
 
 namespace FantacticsScripts
 {
-    public class PlottingPhase : PhaseBase
+    public class PlottingPhase : Phase
     {
         CardOperation.MouseButtonLongPressEventHandler mouseButtonLongPressEventHandler;
         CardOperation.MouseButtonDownEventHandler mouseButtonDownEventHandler;
         CardOperation.MouseButtonUpEventHandler mouseButtonUpEventHandler;
 
-        Card[] actions = new Card[2];
+        readonly Card[] actions = new Card[2];
+
         [SerializeField] BoxCollider2D[] cardFrames = default; //colliderに
         [SerializeField] RectTransform centerOfHandObjects = default;
 
-        void Start()
+        void Awake()
         {
             mouseButtonLongPressEventHandler = new CardOperation.MouseButtonLongPressEventHandler(LongPressMouseButtonEvent);
             mouseButtonDownEventHandler = new CardOperation.MouseButtonDownEventHandler(PressMouseButtonEvent);
             mouseButtonUpEventHandler = new CardOperation.MouseButtonUpEventHandler(ReleaseMouseButtonEvent);
+            result = new byte[3];
         }
 
         /// <summary>
@@ -28,19 +30,28 @@ namespace FantacticsScripts
         {
             actions[0] = null;
             actions[1] = null;
+            result[1] = 0;
+            result[2] = 0;
+            CameraManager.Instance.SetTarget(player.gameObject);
+            CardOperation.Instance.ResetHandsObjectsPosition();
+            UIManager.Instance.SwitchUI(PhaseEnum.PlottingPhase, true);
             CardOperation.Instance.OnMouseButtonLongPress += mouseButtonLongPressEventHandler;
             CardOperation.Instance.OnMouseButtonDown += mouseButtonDownEventHandler;
             CardOperation.Instance.OnMouseButtonUp += mouseButtonUpEventHandler;
         }
 
-        public override void EndProcess()
+        public override byte[] EndProcess()
         {
             CardOperation.Instance.OnMouseButtonLongPress -= mouseButtonLongPressEventHandler;
             CardOperation.Instance.OnMouseButtonDown -= mouseButtonDownEventHandler;
             CardOperation.Instance.OnMouseButtonUp -= mouseButtonUpEventHandler;
+            UIManager.Instance.SwitchUI(PhaseEnum.PlottingPhase, false);
+            result[1] = (byte)actions[0].CardInfo.ID;
+            result[2] = (byte)actions[1].CardInfo.ID;
+            return result;
         }
 
-        protected void PressMouseButtonEvent(Card selectedCard, Card heldCard, ref Vector3 clickPoint)
+        protected void PressMouseButtonEvent(ref Card selectedCard, ref Card heldCard, ref Vector3 clickPoint)
         {
             if (selectedCard != null)
             {
@@ -53,14 +64,14 @@ namespace FantacticsScripts
             index = Mathf.Clamp(index, 0, CardOperation.Instance.NumberOfHands - 1);
             Card tmp = CardOperation.Instance.GetHandsObject(index);
 
-            if (tmp.OnMouse(clickPoint))
+            if (tmp.OnMouse(clickPoint) && tmp != actions[0] && tmp != actions[1])
             {
                 selectedCard = tmp;
                 selectedCard.Emphasize(true);
             }
         }
 
-        protected void LongPressMouseButtonEvent(Card selectedCard, Card heldCard, Vector3 clickPoint)
+        protected void LongPressMouseButtonEvent(ref Card selectedCard, ref Card heldCard, Vector3 clickPoint)
         {
             if (heldCard != null)
             {
@@ -69,10 +80,12 @@ namespace FantacticsScripts
             }
 
             if ((clickPoint - Input.mousePosition).magnitude > 10.0f)
+            {
                 heldCard = selectedCard;
+            }
         }
 
-        protected void ReleaseMouseButtonEvent(Card selectedCard, Card heldCard)
+        protected void ReleaseMouseButtonEvent(ref Card selectedCard, ref Card heldCard)
         {
             if (heldCard == null)
                 return;
@@ -84,6 +97,7 @@ namespace FantacticsScripts
                 {
                     actions[index].ResetPosition((CardOperation.Instance.NumberOfHands - 1) / 2f);
                 }
+                heldCard.Emphasize(false);
                 actions[index] = heldCard;
                 heldCard.transform.position = cardFrames[index].transform.position;
                 selectedCard = null;
@@ -96,16 +110,15 @@ namespace FantacticsScripts
 
             heldCard = null;
         }
-        /*
-        public void DecideSegments()
+        
+        public void DecidePlots()
         {
             if (actions[0] == null || actions[1] == null)
                 return;
-
-            uiManager.SwitchUI(Phase.PlottingPhase, false);
-            byte[] tmp = { (byte)PlayerID, (byte)actions[0].CardInfo.ID, (byte)actions[1].CardInfo.ID };
-            client.StartSend(tmp);
+            
+            player.Information.SetPlots(actions[0].CardInfo.ID, actions[1].CardInfo.ID);
+            player.EndTurn();
         }
-        */
+        
     }
 }

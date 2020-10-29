@@ -4,48 +4,61 @@ using UnityEngine;
 
 namespace FantacticsScripts
 {
-    public class MovePhase : PhaseBase
+    public class MovePhase : Phase
     {
-        System.Action phase;
-
         int currentSquare;
         [SerializeField] Board board = default;
         [SerializeField] GameObject directionUI = default;
+        [SerializeField] SquareTarget squareTarget = default;
 
-        BoardDirection[] moveDirectionHistories = new BoardDirection[6]; //chara毎に大きさ変える
-        BoardDirection moveDirection;
+        BoardDirection[] moveDirectionHistories = new BoardDirection[8]; //chara毎に大きさ変える
         int mobility;
         int numberOfMoves;
-        bool decideDestination;
+        bool duringTheMove;
         float moveAmountBetweenSquares;
-        float charaMoveSpeed = 1f;
+        float objectMoveSpeed = 1f;
+
+        void Awake()
+        {
+            result = new byte[3];
+        }
 
         public override void Initialize()
         {
             //カードの情報をもらう
+            CardInfomation tmp = player.GetPlot();
+            mobility = tmp.Power;
             numberOfMoves = 0;
             directionUI.SetActive(true);
+            currentSquare = player.Information.CurrentSquare;
             board.GetSquare(currentSquare).PlayerExit();
+            UIManager.Instance.SwitchUI(PhaseEnum.MovePhase, true);
+            squareTarget.Initialize(player.transform, SetDirection, EndMove);
+            result[0] &= 15;
+            result[1] = 0;
+            result[2] = 0;
         }
 
-        public override void EndProcess()
+        public override byte[] EndProcess()
         {
-
+            player.Information.SetCurrentSquare(currentSquare);
+            result[0] |= (byte)(numberOfMoves << 4);
+            for (int i = 0; i < numberOfMoves; i++)
+            {
+                result[(i / 4) + 1] |= (byte)((int)moveDirectionHistories[i] << (2 * i) % 8);
+            }
+            directionUI.SetActive(false);
+            UIManager.Instance.SwitchUI(PhaseEnum.MovePhase, false);
+            return result;
         }
 
         public override void Act()
         {
-            if (!decideDestination)
-                return;
-
-            MoveToDestination();
+            squareTarget.Act();
         }
 
         public void SetDirection(int dir)
         {
-            if (decideDestination)
-                return;
-
             if (!board.CanMoveToDirection(currentSquare, BoardDirection.Up + dir))
             {
                 Debug.Log("Nothing Square!");
@@ -63,8 +76,8 @@ namespace FantacticsScripts
             {
                 numberOfMoves--;
                 mobility += board.GetSquare(nextSquare).ConsumptionOfMobility;
-                moveDirection = BoardDirection.Up + dir;
-                decideDestination = true;
+                squareTarget.StartMove(BoardDirection.Up + dir);
+                duringTheMove = true;
                 currentSquare = nextSquare;
                 directionUI.SetActive(false);
                 Debug.Log("Go Back");
@@ -80,11 +93,17 @@ namespace FantacticsScripts
             Debug.Log("Go Forward!");
             directionUI.SetActive(false);
             moveDirectionHistories[numberOfMoves] = BoardDirection.Up + dir;
-            moveDirection = moveDirectionHistories[numberOfMoves];
-            currentSquare = board.GetSquare(currentSquare).GetAdjacentSquares(BoardDirection.Up + dir).Number;
+            squareTarget.StartMove(moveDirectionHistories[numberOfMoves]);
+            currentSquare = board.GetSquare(currentSquare).GetAdjacentSquares(moveDirectionHistories[numberOfMoves]).Number;
             numberOfMoves++;
             mobility -= board.GetSquare(nextSquare).ConsumptionOfMobility;
-            decideDestination = true;
+            duringTheMove = true;
+        }
+
+        void EndMove()
+        {
+            directionUI.SetActive(true);
+            duringTheMove = false;
         }
 
         /// <summary>
@@ -96,12 +115,12 @@ namespace FantacticsScripts
             mobility = 4;
             numberOfMoves = 0;
             Debug.Log("You Got 4 Mobilities!");
-            decideDestination = false;
+            duringTheMove = false;
         }
 
         public void DecideDestination()
         {
-            if (decideDestination)
+            if (duringTheMove)
                 return;
 
             if (CanPlayerStillMove())
@@ -109,14 +128,8 @@ namespace FantacticsScripts
                 Debug.Log("You Can Still Move!");
                 return;
             }
-
-            directionUI.SetActive(false);
-            //board.GetSquare(currentSquare).PlayerEnter(Team);
-            UIManager.Instance.SwitchUI(Phase.MovePhase, false);
-            numberOfMoves = 0;
-            mobility = 0;
-            phase = null;
             Debug.Log("Let's Go!");
+            player.EndTurn();
         }
 
         bool CanPlayerStillMove()
@@ -127,54 +140,15 @@ namespace FantacticsScripts
             int adjacentSquareNumber;
             for (int i = 0; i < 4; i++)
             {
-                if (moveDirectionHistories[numberOfMoves - 1] == BoardDirection.Up + i)
+                if (moveDirectionHistories[numberOfMoves - 1] == BoardDirection.Up + (i + 2) % 4)
                     continue;
 
                 adjacentSquareNumber = board.GetSquare(currentSquare).GetAdjacentSquares(BoardDirection.Up + i).Number;
-                if (board.GetSquare(adjacentSquareNumber).ConsumptionOfMobility > mobility || board.PlayerIsInSquare(adjacentSquareNumber))
-                    return false;
+                if (board.GetSquare(adjacentSquareNumber).ConsumptionOfMobility <= mobility && !board.PlayerIsInSquare(adjacentSquareNumber))
+                    return true;
             }
 
-            return true;
-        }
-
-        void MoveToDestination()
-        {
-            moveAmountBetweenSquares += charaMoveSpeed;
-            if (moveAmountBetweenSquares > Square.Side)
-            {
-                MoveBetweenSquares(transform, moveDirection, charaMoveSpeed - (moveAmountBetweenSquares - Square.Side));
-                moveAmountBetweenSquares = 0f;
-                directionUI.SetActive(true);
-                decideDestination = false;
-            }
-            else
-            {
-                MoveBetweenSquares(transform, moveDirection, charaMoveSpeed);
-            }
-            CameraManager.Instance.SetPosition(transform);
-        }
-
-        void MoveBetweenSquares(Transform t, BoardDirection dir, float amount)
-        {
-            switch (dir)
-            {
-                case BoardDirection.Up:
-                    t.position += Vector3.forward * amount;
-                    break;
-
-                case BoardDirection.Right:
-                    t.position += Vector3.right * amount;
-                    break;
-
-                case BoardDirection.Down:
-                    t.position += Vector3.back * amount;
-                    break;
-
-                case BoardDirection.Left:
-                    t.position += Vector3.left * amount;
-                    break;
-            }
+            return false;
         }
     }
 }

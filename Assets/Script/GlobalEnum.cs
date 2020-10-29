@@ -3,9 +3,8 @@ using System.Collections.Generic;
 
 namespace FantacticsScripts
 {
-    public enum Phase
+    public enum PhaseEnum
     {
-        WaitingPhase,
         PlottingPhase,
         MovePhase,
         RangePhase,
@@ -26,6 +25,6 @@ namespace FantacticsScripts
         Up = 0,
         Right = 1,
         Down = 2,
-        Left = 3
+        Left = 3,
     }
 }

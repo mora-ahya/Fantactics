@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace FantacticsScripts
 {
-    public class MeleePhase : MonoBehaviour
+    public class MeleePhase : Phase
     {
         int startSquare;
         int targetSquare;

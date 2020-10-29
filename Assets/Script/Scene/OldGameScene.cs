@@ -1,138 +1,149 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Net.Sockets;
 
 namespace FantacticsScripts
 {
-    public class ServerMain : MonoBehaviour
+    public class OldGameScene : MonoBehaviour
     {
-        readonly object syncLock = new object();
+        public Card[] testCards;
 
-        Server server;
-        Server.RecieveEventHandler receivePlayerPlottingHandler;
-        Server.RecieveEventHandler receivePlayerActionHandler;
-        Board board;
-        Socket[] clients;
+        System.Action process;
 
-        PlayerInformation[] players;
+        [SerializeField] Board board = default;
+        [SerializeField] CameraManager cameraManager = default;
+        [SerializeField] PhaseNotice phaseNotice = default;
+        public Player[] players;//オンライン形式ならintのプレイヤーidで良いかも
         Character[] characters;//playerと辞書形式にできるかも
-        Tuple<int, int>[] playerPlots; //カードのidを受け取る。オンラインでやる場合は...
+        System.Tuple<int, int>[] playerSegments; //カードのidを受け取る。オンラインでやる場合は...
         int currentPlayerID;
         int[] actionOrder;//playersのインデックスを行動順に並べる
         CardInfomation[] cards;
         int turn;
         int maxPlayer = 1;
         int currentSegment;
-        int numberOfSignals = 0;
+        bool signal;
         PhaseEnum currentPhase;
 
         void Start()
         {
-            receivePlayerPlottingHandler = new Server.RecieveEventHandler(ReceivePlayerPlottingEvent);
-            receivePlayerActionHandler = new Server.RecieveEventHandler(ReceivePlayerActionEvent);
             board.Initialize();
+            board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquares(BoardDirection.Right).Number, true);
+            board.ApplayRedBitFlag();
+            playerSegments = new System.Tuple<int, int>[6];
             actionOrder = new int[6] { 0, 1, 2, 3, 4, 5 };
             cards = new CardInfomation[6];
             characters = new Character[6];
-            server = new Server();
-            server.Initialize();
-            
+            characters[0] = new TestCharacter();
+            //players[0].Initialize(characters[0]);
+            currentPhase = PhaseEnum.PlottingPhase;
+            phaseNotice.DisplayPhaseNotice(currentPhase);
+            process = WaitPhaseNoticeProcess;
         }
 
         void Update()
         {
-            
+            players[0].Act();
+            process();
+            //cameraManager.FreeMode();
         }
 
-        void StartPlottingPhase()
+        void Process()
         {
-            currentSegment = 0;
-            currentPhase = PhaseEnum.PlottingPhase;
-            server.OnRecieveData += receivePlayerPlottingHandler;
+            process();
         }
 
         /// <summary>
-        /// プレイヤーがプロットしたカードのIDを受け取るときのイベント
-        /// serverのOnReceiveDataに加える
+        /// プレイヤーがアクションを起こすプロセス
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="data"></param>
-        void ReceivePlayerPlottingEvent(object sender, byte[] data)
+        void ActionPlayerProcess()
         {
-            playerPlots[data[0]] = Tuple.Create((int)data[1], (int)data[2]);
-            lock (syncLock)
+            players[currentPlayerID].Act();
+
+            //if (!players[currentPlayerID].Signal)
+            //return;
+
+            if (turn == maxPlayer - 1)
             {
-                numberOfSignals++;
-                if (numberOfSignals == maxPlayer)
+                turn = 0;
+                if (currentSegment == 0)
                 {
-                    //次の処理に進む
-                    numberOfSignals = 0;
-                    server.OnRecieveData -= receivePlayerPlottingHandler;
-                    StartActionPhase();
+                    currentSegment++;
+                    ConvertCardIDIntoCardInfomation(currentSegment);
+                    DecideActionOrder();
+                    AllocateTurnToPlayer();
+                    return;
                 }
+                currentSegment = 0;
+                process = WaitPhaseNoticeProcess;
+                currentPhase = PhaseEnum.PlottingPhase;
+                phaseNotice.DisplayPhaseNotice(currentPhase);
+                for (int i = 0; i < maxPlayer; i++)
+                    players[i].StartTurn(currentPhase);
+
+                return;
             }
+            turn++;
+            AllocateTurnToPlayer();
+
         }
 
         /// <summary>
-        /// アクションフェーズを開始する
+        /// プレイヤーが使用カードを選択するのを待つプロセス
         /// </summary>
-        void StartActionPhase()
+        void WaitPlayerSegmentsProcess()
         {
-            server.OnRecieveData += receivePlayerActionHandler;
-            currentSegment = 0;
+            /*
+            for (int i = 0; i < maxPlayer; i++)
+                players[i].Act();*/
+
+            if (!WaitPlayers())
+                return;
+
+            GetPlayerSegments();
             ConvertCardIDIntoCardInfomation(currentSegment);
             DecideActionOrder();
             AllocateTurnToPlayer();
         }
 
-        /// <summary>
-        /// プレイヤーがアクションフェーズで行った結果を受け取るときのイベント
-        /// serverのOnReceiveDataに加える
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="data"></param>
-        void ReceivePlayerActionEvent(object sender, byte[] data)
+        void WaitPhaseNoticeProcess()
         {
-            switch (currentPhase)
+            if (!phaseNotice.IsActing)
             {
-                case PhaseEnum.MovePhase:
-                    break;
-
-                case PhaseEnum.RangePhase:
-                    break;
-
-                case PhaseEnum.MeleePhase:
-                    break;
-
-                default:
-                    break;
-            }
-            //受け取ったデータを他のプレイヤーにも送る
-
-            if (turn == maxPlayer - 1)
-            {
-                EndSegment();
+                if (currentPhase == PhaseEnum.PlottingPhase)
+                {
+                    process = WaitPlayerSegmentsProcess;
+                }
+                else
+                {
+                    process = ActionPlayerProcess;
+                }
                 return;
             }
-            turn++;
-            AllocateTurnToPlayer();
+
+            phaseNotice.Act();
         }
 
-        void EndSegment()
+        bool WaitPlayers()
         {
-            turn = 0;
-            if (currentSegment == 0)
+            for (int i = 0; i < maxPlayer; i++)
             {
-                currentSegment++;
-                ConvertCardIDIntoCardInfomation(currentSegment);
-                DecideActionOrder();
-                AllocateTurnToPlayer();
-                return;
+                //if (!players[i].Signal)
+                //return false;
             }
-            server.OnRecieveData -= receivePlayerPlottingHandler;
-            StartActionPhase();
+            return true;
+        }
+
+        /// <summary>
+        /// 全プレイヤーが選んだカードを受け取る
+        /// タプルでカードIDを受け取る
+        /// </summary>
+        void GetPlayerSegments()
+        {
+            for (int i = 0; i < maxPlayer; i++)
+            {
+                //playerSegments[i] = players[i].GetSegmentsID();
+            }
         }
 
         /// <summary>
@@ -145,14 +156,14 @@ namespace FantacticsScripts
             {
                 for (int i = 0; i < maxPlayer; i++)
                 {
-                    cards[i] = characters[i].GetCard(playerPlots[i].Item1);
+                    cards[i] = characters[i].GetCard(playerSegments[i].Item1);
                 }
                 return;
             }
 
             for (int i = 0; i < maxPlayer; i++)
             {
-                cards[i] = characters[i].GetCard(playerPlots[i].Item2);
+                cards[i] = characters[i].GetCard(playerSegments[i].Item2);
             }
         }
 
@@ -194,19 +205,15 @@ namespace FantacticsScripts
         /// </summary>
         void AllocateTurnToPlayer()
         {
-            byte[] data = new byte[2];
             currentPlayerID = actionOrder[turn];
-            data[0] = (byte)currentPlayerID;
             if (currentPhase != ChangeCardTypeToPhase(cards[currentPlayerID].Type))
             {
                 currentPhase = ChangeCardTypeToPhase(cards[currentPlayerID].Type);
+                phaseNotice.DisplayPhaseNotice(currentPhase);
+                process = WaitPhaseNoticeProcess;
             }
-            data[1] = (byte)currentPhase;
-            for (int i = 0; i < maxPlayer; i++)
-            {
-                server.StartSend(clients[i], data);
-            }
-            server.StartReceive(clients[currentPlayerID], 1024);//データサイズ変更
+            players[currentPlayerID].StartTurn(currentPhase, currentSegment);
+            signal = true;
         }
 
         /// <summary>

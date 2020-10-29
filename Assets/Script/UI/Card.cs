@@ -48,7 +48,7 @@ namespace FantacticsScripts
             {
                 if (!isEmphasized)
                 {
-                    gameObject.transform.position *= 1.1f;
+                    gameObject.transform.localScale *= 1.1f;
                     isEmphasized = true;
                 }
             }
@@ -56,7 +56,7 @@ namespace FantacticsScripts
             {
                 if (isEmphasized)
                 {
-                    gameObject.transform.position /= 1.1f;
+                    gameObject.transform.localScale /= 1.1f;
                     isEmphasized = false;
                 }
             }

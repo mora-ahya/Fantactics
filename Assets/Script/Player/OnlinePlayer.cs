@@ -16,7 +16,7 @@ namespace FantacticsScripts
         bool signal = false;
         int currentSquare;
         int currentSegment;
-        Phase currentPhase;
+        PhaseEnum currentPhase;
         [SerializeField] PhaseNotice phaseNotice = default;
         [SerializeField] Board board = default;
         [SerializeField] GameObject directionUI = default;
@@ -94,21 +94,21 @@ namespace FantacticsScripts
             StartTurn(currentPhase);
         }
 
-        void StartTurn(Phase p)
+        void StartTurn(PhaseEnum p)
         {
             switch (p)
             {
-                case Phase.PlottingPhase:
+                case PhaseEnum.PlottingPhase:
                     PlottingPhaseInit();
                     break;
-                case Phase.MovePhase:
+                case PhaseEnum.MovePhase:
                     process = MovePhaseProcess;
                     directionUI.SetActive(true);
                     board.GetSquare(currentSquare).PlayerExit();
                     break;
 
-                case Phase.RangePhase:
-                case Phase.MeleePhase:
+                case PhaseEnum.RangePhase:
+                case PhaseEnum.MeleePhase:
                     SetUsedCard(currentSegment);
                     directionUI.SetActive(true);
                     startSquare = currentSquare;
@@ -126,7 +126,7 @@ namespace FantacticsScripts
         
         /// <summary>
         /// OnReceiveDataに加える。サーバから手札を受け取るときに使う。
-        /// データ形式...data0～Hp番目:手札のカードID
+        /// データ形式...data0～Imagination番目:手札のカードID
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="data"></param>
@@ -150,7 +150,7 @@ namespace FantacticsScripts
             }
             
             deck &= ~hands;
-            currentPhase = Phase.PlottingPhase;
+            currentPhase = PhaseEnum.PlottingPhase;
             process = PlottingPhaseProcess;
             signal = true;
         }
@@ -242,7 +242,7 @@ namespace FantacticsScripts
             if (actions[0] == null || actions[1] == null)
                 return;
 
-            uiManager.SwitchUI(Phase.PlottingPhase, false);
+            uiManager.SwitchUI(PhaseEnum.PlottingPhase, false);
             byte[] tmp = {(byte)PlayerID,(byte)actions[0].CardInfo.ID, (byte)actions[1].CardInfo.ID };
             client.StartSend(tmp);
         }
@@ -329,7 +329,7 @@ namespace FantacticsScripts
             client.StartSend(tmp);
             directionUI.SetActive(false);
             board.GetSquare(currentSquare).PlayerEnter(Team);
-            uiManager.SwitchUI(Phase.MovePhase, false);
+            uiManager.SwitchUI(PhaseEnum.MovePhase, false);
             numberOfMoves = 0;
             mobility = 0;
             process = null;
@@ -430,7 +430,7 @@ namespace FantacticsScripts
             }
 
             targetSquare = tmp;
-            cameraManager.MoveSquare(BoardDirection.Up + n);
+            //cameraManager.MoveSquare(BoardDirection.Up + n);
         }
 
         public void DecideTarget()
@@ -443,7 +443,7 @@ namespace FantacticsScripts
             }
 
             cameraManager.SetPosition(transform);
-            uiManager.SwitchUI(Phase.RangePhase, false);
+            uiManager.SwitchUI(PhaseEnum.RangePhase, false);
             usedCardInformation = null;
             process = null;
             Debug.Log("You attack this square!!");
@@ -494,7 +494,7 @@ namespace FantacticsScripts
                 i = BitCalculation.GetNthBit(deck, UnityEngine.Random.Range(0, BitCalculation.BitCount(deck)));
                 deck &= ~i;
                 exclusionCards |= i;
-
+                count++;
             }
         }
 
