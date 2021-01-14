@@ -11,7 +11,7 @@ namespace FantacticsScripts
 
         public int test;
         public int Number { get; private set; }
-        public int TeamOfHavingPlayer { get; private set; }
+        public int HavingPlayerID { get; private set; } = -1;
         public int ConsumptionOfMobility { get; private set; } = 1;
 
         Square[] adjacentSquares = new Square[4];
@@ -30,14 +30,14 @@ namespace FantacticsScripts
             return adjacentSquares[(int)dir];
         }
 
-        public void PlayerEnter(int teamNum)
+        public void PlayerEnter(int playerID)
         {
-            TeamOfHavingPlayer = teamNum;
+            HavingPlayerID = playerID;
         }
 
         public void PlayerExit()
         {
-            TeamOfHavingPlayer = 0;
+            HavingPlayerID = -1;
         }
 
         /// <summary>

@@ -6,7 +6,7 @@ namespace FantacticsScripts
 {
     public class Phase : MonoBehaviour
     {
-        [SerializeField] protected Player player = default;
+        [SerializeField] protected PhaseManager manager = default;
         protected byte[] result;
 
         public virtual void Initialize()
@@ -14,7 +14,7 @@ namespace FantacticsScripts
 
         }
 
-        public virtual byte[] EndProcess()
+        public virtual byte[] GetResult()
         {
             return null;
         }
@@ -26,7 +26,7 @@ namespace FantacticsScripts
 
         public void UpdatePlayerID()
         {
-            result[0] = (byte)player.Information.PlayerID;
+            result[0] = (byte)manager.GetSelfPlayer().Information.PlayerID;
         }
     }
 }

@@ -32,7 +32,7 @@ namespace FantacticsScripts
             actions[1] = null;
             result[1] = 0;
             result[2] = 0;
-            CameraManager.Instance.SetTarget(player.gameObject);
+            CameraManager.Instance.SetTarget(manager.GetSelfPlayer().gameObject);
             CardOperation.Instance.ResetHandsObjectsPosition();
             UIManager.Instance.SwitchUI(PhaseEnum.PlottingPhase, true);
             CardOperation.Instance.OnMouseButtonLongPress += mouseButtonLongPressEventHandler;
@@ -40,7 +40,7 @@ namespace FantacticsScripts
             CardOperation.Instance.OnMouseButtonUp += mouseButtonUpEventHandler;
         }
 
-        public override byte[] EndProcess()
+        public override byte[] GetResult()
         {
             CardOperation.Instance.OnMouseButtonLongPress -= mouseButtonLongPressEventHandler;
             CardOperation.Instance.OnMouseButtonDown -= mouseButtonDownEventHandler;
@@ -115,9 +115,12 @@ namespace FantacticsScripts
         {
             if (actions[0] == null || actions[1] == null)
                 return;
-            
-            player.Information.SetPlots(actions[0].CardInfo.ID, actions[1].CardInfo.ID);
-            player.EndTurn();
+
+            Player player = manager.GetSelfPlayer();
+            player.Information.SetPlot(0, actions[0].CardInfo.ID);
+            player.Information.SetPlot(1, actions[1].CardInfo.ID);
+            manager.EndPhase(this);
+            //player.EndTurn();
         }
         
     }

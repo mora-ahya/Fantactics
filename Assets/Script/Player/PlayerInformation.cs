@@ -28,10 +28,12 @@ namespace FantacticsScripts
             CurrentSquare = num;
         }
 
-        public void SetPlots(int cardID1, int cardID2)
+        public void SetPlot(int segmentNum, int cardID)
         {
-            plots[0] = cardID1;
-            plots[1] = cardID2;
+            if (segmentNum > 2)
+                return;
+
+            plots[segmentNum] = cardID;
         }
 
         public CardInfomation GetPlot(int segmentNumber)

@@ -78,8 +78,8 @@ namespace FantacticsScripts
                 process = WaitPhaseNoticeProcess;
                 currentPhase = PhaseEnum.PlottingPhase;
                 phaseNotice.DisplayPhaseNotice(currentPhase);
-                for (int i = 0; i < maxPlayer; i++)
-                    players[i].StartTurn(currentPhase);
+                //for (int i = 0; i < maxPlayer; i++)
+                    //players[i].StartTurn(currentPhase);
 
                 return;
             }
@@ -212,7 +212,7 @@ namespace FantacticsScripts
                 phaseNotice.DisplayPhaseNotice(currentPhase);
                 process = WaitPhaseNoticeProcess;
             }
-            players[currentPlayerID].StartTurn(currentPhase, currentSegment);
+            //players[currentPlayerID].StartTurn(currentPhase, currentSegment);
             signal = true;
         }
 

@@ -9,18 +9,22 @@ namespace FantacticsScripts
     {
         public Card[] testCards;
 
-        System.Action process;
-        Client client;
+        System.Action process = null;
+        Client client = null;
+        Queue<byte[]> receivedData = new Queue<byte[]>();
+        readonly object receiveEventLock;
 
         [SerializeField] Board board = default;
         [SerializeField] PhaseNotice phaseNotice = default;
-        [SerializeField] Phase[] phases = default;
+        [SerializeField] PhaseManager phaseManager = default;
         [SerializeField] Player[] players = default;
         int currentPlayerID;
+        int selfPlayerID;
         int[] actionOrder;//playersのインデックスを行動順に並べる
         int turn;
         int maxPlayer = 1;
-        PhaseEnum currentPhase;
+        PhaseEnum currentPhaseEnum;
+        Phase currentPhase;
         CharacterAnimation currentAnimation;
 
         void Start()
@@ -31,10 +35,12 @@ namespace FantacticsScripts
             actionOrder = new int[6] { 0, 1, 2, 3, 4, 5 };
             players[0].Initialize(new PlayerInformation(new TestCharacter()));
             DrawCards();
-            currentPhase = PhaseEnum.PlottingPhase;
-            phaseNotice.DisplayPhaseNotice(currentPhase);
-            players[0].StartTurn(phases[(int)currentPhase]);
-            process = MainPlayerTurnProcess;
+            currentPhaseEnum = PhaseEnum.PlottingPhase;
+            currentPhase = phaseManager.GetPhase(currentPhaseEnum);
+            phaseManager.Initialize(this, players[0]);
+            currentPhase.Initialize();
+            phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
+            //players[0].StartTurn(phases[(int)currentPhase]);
         }
 
         void Update()
@@ -45,10 +51,12 @@ namespace FantacticsScripts
 
         void Process()
         {
+            CompileReceivedData();
             process();
 
             CameraManager.Instance.Act();
             CardOperation.Instance.Act();
+            currentPhase?.Act();
             if (phaseNotice.IsActing)
                 phaseNotice.Act();
         }
@@ -60,30 +68,117 @@ namespace FantacticsScripts
 
         void SendPlayerActionEvent(object sender)
         {
-            switch (currentPhase)
-            {
-                case PhaseEnum.PlottingPhase:
-                    DecideActionOrder();
-                    AllocateTurnToPlayer();
-                    break;
-
-                case PhaseEnum.MovePhase:
-                    process = WaitCharacterAnimation;
-                    break;
-
-                case PhaseEnum.RangePhase:
-                    process = WaitCharacterAnimation;
-                    break;
-
-                case PhaseEnum.MeleePhase:
-                    process = WaitCharacterAnimation;
-                    break;
-            }
+            client.StartReceive(1024);
         }
 
         void ReceiveDataFromServerEvent(object sender, byte[] data)
         {
+            lock (receiveEventLock)
+            {
+                receivedData.Enqueue(data);
+            }
+            
+        }
 
+        /// <summary>
+        /// byteの配列
+        /// rData[0]:DataType
+        /// Notification...rData[1]:プレイヤーID,rData[2]:カードID
+        /// Action
+        /// </summary>
+        void CompileReceivedData()
+        {
+            
+            byte[] rData;
+
+            if (receivedData.Count == 0)
+                return;
+
+            lock (receiveEventLock)
+            {
+                rData = receivedData.Dequeue();
+            }
+
+            switch (DataType.Notification + rData[0])
+            {
+                case DataType.Notification:
+                    ReceiveNotification();
+                    break;
+
+                case DataType.Action:
+                    ReceiveAction();
+                    break;
+
+                case DataType.React:
+                    ReceiveReact();
+                    break;
+            }
+
+            //以下、ローカル関数
+
+            void ReceiveNotification()
+            {
+                currentPlayerID = rData[1];
+                PhaseEnum p = ChangeCardTypeToPhase(players[currentPlayerID].Information.Chara.GetCard(rData[2]).Type);
+                if (currentPhaseEnum != p)
+                {
+                    currentPhaseEnum = p;
+                    phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
+                }
+
+                if (currentPlayerID == selfPlayerID)
+                {
+                    //players[selfPlayerID].StartTurn(phases[(int)currentPhase]);
+                    currentPhase = phaseManager.GetPhase(currentPhaseEnum);
+                    currentPhase.Initialize();
+                }
+                else
+                {
+                    players[selfPlayerID].Information.SetPlot(CurrentSegment, rData[2]);
+                    //データ受け取り開始
+                }
+            }
+
+            void ReceiveAction()
+            {
+                Player tmp = players[currentPlayerID];
+                currentAnimation = tmp.CharaAnim;
+                switch (PhaseEnum.PlottingPhase + rData[2])
+                {
+                    case PhaseEnum.MovePhase:
+                        tmp.CalculateCurrentSquare(rData[3], 4, rData, tmp.Information.Team != players[selfPlayerID].Information.Team);
+                        break;
+
+                    case PhaseEnum.RangePhase:
+                        break;
+                }
+            }
+
+            void ReceiveReact()
+            {
+
+            }
+        }
+
+        void CalculateRangeDamage(Board board, Player[] players, int actingPlayerID, int place, CardInfomation cardInfo, byte[] reacts)
+        {
+            Player actingPlayer = players[actingPlayerID];
+
+            for (int i = 0; i < players.Length; i++)
+            {
+                if (i == actingPlayerID)
+                    continue;
+
+                Player target = players[i];
+
+                int delta = board.GetManhattanDistance(place, target.Information.CurrentSquare);
+
+                if (delta > cardInfo.maxRange || delta < cardInfo.minRange)
+                    continue;
+
+
+                //キャラアニメーションにダメージを渡すことでダメージ量を表示させる
+            }
         }
 
         void TransitionToTheNextTurn()
@@ -97,10 +192,10 @@ namespace FantacticsScripts
                     CurrentSegment = 0;
                     ThrowAwayHands();
                     DrawCards();
-                    currentPhase = PhaseEnum.PlottingPhase;
-                    players[0].StartTurn(phases[(int)currentPhase]);
-                    phaseNotice.DisplayPhaseNotice(currentPhase);
-                    process = MainPlayerTurnProcess;
+                    currentPhaseEnum = PhaseEnum.PlottingPhase;
+                    currentPhase = phaseManager.GetPhase(currentPhaseEnum);
+                    currentPhase.Initialize();
+                    phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
                     return;
                 }
                 DecideActionOrder();
@@ -109,15 +204,10 @@ namespace FantacticsScripts
             AllocateTurnToPlayer();
         }
 
-        void MainPlayerTurnProcess()
-        {
-            players[0].Act();
-        }
-
         void WaitCharacterAnimation()
         {
             currentAnimation.Act();
-            if (!currentAnimation.GetAnimationFinish())
+            if (!currentAnimation.IsAnimationOver())
                 return;
 
             TransitionToTheNextTurn();
@@ -168,16 +258,17 @@ namespace FantacticsScripts
         {
             currentPlayerID = actionOrder[turn];
             PhaseEnum p = ChangeCardTypeToPhase(players[currentPlayerID].Information.GetPlot(CurrentSegment).Type);
-            if (currentPhase != p)
+            if (currentPhaseEnum != p)
             {
-                currentPhase = p;
-                phaseNotice.DisplayPhaseNotice(currentPhase);
+                currentPhaseEnum = p;
+                phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
             }
 
             if (currentPlayerID == 0)
             {
-                players[0].StartTurn(phases[(int)currentPhase]);
-                process = MainPlayerTurnProcess;
+                //players[0].StartTurn(phases[(int)currentPhase]);
+                currentPhase = phaseManager.GetPhase(currentPhaseEnum);
+                currentPhase.Initialize();
             }
             else
             {

@@ -20,12 +20,13 @@ namespace FantacticsScripts
 
         void Awake()
         {
-            result = new byte[3];
+            result = new byte[4];//プレイヤーID,移動数,移動方向1~4,移動方向5~8
         }
 
         public override void Initialize()
         {
             //カードの情報をもらう
+            Player player = manager.GetSelfPlayer();
             CardInfomation tmp = player.GetPlot();
             mobility = tmp.Power;
             numberOfMoves = 0;
@@ -34,18 +35,19 @@ namespace FantacticsScripts
             board.GetSquare(currentSquare).PlayerExit();
             UIManager.Instance.SwitchUI(PhaseEnum.MovePhase, true);
             squareTarget.Initialize(player.transform, SetDirection, EndMove);
-            result[0] &= 15;
             result[1] = 0;
             result[2] = 0;
+            result[3] = 0;
         }
 
-        public override byte[] EndProcess()
+        public override byte[] GetResult()
         {
-            player.Information.SetCurrentSquare(currentSquare);
-            result[0] |= (byte)(numberOfMoves << 4);
+            manager.GetSelfPlayer().Information.SetCurrentSquare(currentSquare);
+            board.GetSquare(currentSquare).PlayerEnter(result[0]);
+            result[1] = (byte)numberOfMoves;
             for (int i = 0; i < numberOfMoves; i++)
             {
-                result[(i / 4) + 1] |= (byte)((int)moveDirectionHistories[i] << (2 * i) % 8);
+                result[(i / 4) + 2] |= (byte)((int)moveDirectionHistories[i] << (2 * i) % 8);
             }
             directionUI.SetActive(false);
             UIManager.Instance.SwitchUI(PhaseEnum.MovePhase, false);
@@ -129,7 +131,8 @@ namespace FantacticsScripts
                 return;
             }
             Debug.Log("Let's Go!");
-            player.EndTurn();
+            manager.EndPhase(this);
+            //player.EndTurn();
         }
 
         bool CanPlayerStillMove()
@@ -141,6 +144,9 @@ namespace FantacticsScripts
             for (int i = 0; i < 4; i++)
             {
                 if (moveDirectionHistories[numberOfMoves - 1] == BoardDirection.Up + (i + 2) % 4)
+                    continue;
+
+                if (!board.CanMoveToDirection(currentSquare, BoardDirection.Up + i))
                     continue;
 
                 adjacentSquareNumber = board.GetSquare(currentSquare).GetAdjacentSquares(BoardDirection.Up + i).Number;

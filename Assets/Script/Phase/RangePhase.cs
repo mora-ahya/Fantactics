@@ -22,6 +22,7 @@ namespace FantacticsScripts
 
         public override void Initialize()
         {
+            Player player = manager.GetSelfPlayer();
             startSquare = player.Information.CurrentSquare;
             targetSquare = startSquare;
             usedCardInformation = player.GetPlot();
@@ -29,7 +30,7 @@ namespace FantacticsScripts
             UIManager.Instance.SwitchUI(PhaseEnum.RangePhase, true);
         }
 
-        public override byte[] EndProcess()
+        public override byte[] GetResult()
         {
             UIManager.Instance.SwitchUI(PhaseEnum.RangePhase, false);
             directionUI.SetActive(false);
@@ -77,7 +78,8 @@ namespace FantacticsScripts
                 return;
             }
             usedCardInformation = null;
-            player.EndTurn();
+            manager.EndPhase(this);
+            //player.EndTurn();
             Debug.Log("You attack this square!!");
         }
     }

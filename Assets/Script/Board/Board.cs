@@ -18,6 +18,11 @@ namespace FantacticsScripts
         int[] redBitFlag = new int[((Width * Height) >> 5) + 1];
         float[] redBitFlagF = new float[((Width * Height) >> 5) + 1];
 
+        public static Vector3 SquareNuberToWorldPosition(int squareNum)
+        {
+            return new Vector3((squareNum % Width + 0.5f) * Square.Side, 0f, (squareNum / Width + 0.5f) * Square.Side);
+        }
+
         public void Initialize()
         {
             material = GetComponent<MeshRenderer>().material;
@@ -63,12 +68,12 @@ namespace FantacticsScripts
 
         public bool PlayerIsInSquare(int squareNum)
         {
-            return squares[squareNum].TeamOfHavingPlayer != 0;
+            return squares[squareNum].HavingPlayerID != -1;
         }
 
         public bool PlayerIsInSquare(int squareNum, BoardDirection dir)
         {
-            return squares[squareNum].GetAdjacentSquares(dir).TeamOfHavingPlayer != 0;
+            return squares[squareNum].GetAdjacentSquares(dir).HavingPlayerID != -1;
         }
 
         public int GetManhattanDistance(int squareNum1, int squareNum2)

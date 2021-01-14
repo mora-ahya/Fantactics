@@ -19,10 +19,10 @@ namespace FantacticsScripts
             Debug.Log(true);
         }
 
-        public void SetMovement(byte[] directions)
+        public void SetMovement(int maxNumOfMoves, int offset, byte[] directions)
         {
-            maxNumberOfMoves = directions[0] >> 4;
-            FantacticsBitConverter.ToBoardDirections(directions, moveDirections);
+            maxNumberOfMoves = maxNumOfMoves;
+            FantacticsBitConverter.ToBoardDirections(maxNumberOfMoves, offset, directions, moveDirections);
             numberOfMoves = 0;
             func = MoveAlongDirections;
             CameraManager.Instance.SetTarget(gameObject);
@@ -69,7 +69,7 @@ namespace FantacticsScripts
             }
         }
 
-        public bool GetAnimationFinish()
+        public bool IsAnimationOver()
         {
             return func == null;
         }

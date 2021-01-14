@@ -16,7 +16,9 @@
 
 		SubShader
 	{
-		Cull Off ZWrite Off ZTest Always
+		Tags { "Queue" = "Transparent" }
+
+		Cull Off ZWrite On ZTest Always
 		Blend[_SrcFactor][_DstFactor]
 
 		Pass{
@@ -52,21 +54,22 @@
 			v2f vert(appdata v) {
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
-				o.vertex.y *= -_ProjectionParams.x;
+				//o.vertex.y *= -_ProjectionParams.x;
 				o.uv = v.uv;
 				return o;
 			}
 
 			fixed4 frag(v2f i) : SV_Target{
-				//_Interval = 0.2;
-				//_Origin = float2(0, 0);
-				//_Scope = 0.1;
-				//_WaveStrength = 0.75;
-				//_DecreaseRate = 0;
-				//float tmp = (_Time * 16) % _Interval;
-				//_CharaTime = _Time * 16;
+				_Interval = 0.2;
+				_Origin = float2(0.5, 0.5);
+				_Scope = 0.1;
+				_Speed = 1;
+				_WaveStrength = 0.75;
+				_DecreaseRate = 0;
+				float tmp = (_Time * 16) % _Interval;
+				_CharaTime = _Time * 16;
 				//_Origin += _Time / 16;
-				float tmp = (_CharaTime * _Speed) % _Interval;
+				//float tmp = (_CharaTime * _Speed) % _Interval;
 				float r = (float)(floor((distance(_Origin, i.uv) - tmp + _Scope) / _Interval)) * _Interval + tmp;
 				float l = r - distance(_Origin, i.uv);
 

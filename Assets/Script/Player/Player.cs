@@ -33,27 +33,53 @@ namespace FantacticsScripts
         public void Act()
         {
             //phase?.Invoke();
-            currentPhase?.Act();
+            
         }
 
-        public void StartTurn(PhaseEnum p, int segment = 0)
+        /// <summary>
+        /// 自分以外のプレイヤー用
+        /// 移動アニメーションのセットから
+        /// プレイヤーの位置情報の更新まで行う
+        /// </summary>
+        /// <param name="maxNumOfMoves"></param>
+        /// <param name="offset"></param>
+        /// <param name="directions"></param>
+        /// <param name="isInversion"></param>
+        public void CalculateCurrentSquare(int maxNumOfMoves, int offset, byte[] directions, bool isInversion)
         {
-            //currentPhase = p;
-            //UIManager.Instance.SwitchUI(p, true);
-            Debug.Log("Your Turn!");
-        }
+            charaAnim.SetMovement(maxNumOfMoves, offset, directions);
 
-        public void StartTurn(Phase p, int segment = 0)
-        {
-            currentPhase = p;
-            currentPhase.Initialize();
-        }
+            board.GetSquare(Information.CurrentSquare).PlayerExit();
 
-        public void EndTurn()
-        {
-            byte[] result = currentPhase.EndProcess();
-            currentPhase = null;
-            gameScene.NotifyPhaseEnd(result);
+            int x = 0, y = 0;
+            BoardDirection tmp;
+            int inversionOffset = isInversion ? 2 : 0;
+
+            for (int i = 0; i < maxNumOfMoves; i++)
+            {
+                tmp = BoardDirection.Up + (((directions[(i / 4) + offset] >> (2 * i % 8)) & 3) ^ inversionOffset);
+                switch (tmp)
+                {
+                    case BoardDirection.Up:
+                        y += 1;
+                        break;
+
+                    case BoardDirection.Right:
+                        x += 1;
+                        break;
+
+                    case BoardDirection.Down:
+                        y -= 1;
+                        break;
+
+                    case BoardDirection.Left:
+                        x -= 1;
+                        break;
+                }
+            }
+
+            Information.SetCurrentSquare(Information.CurrentSquare + Board.Width * y + x);
+            board.GetSquare(Information.CurrentSquare).PlayerEnter(Information.PlayerID);
         }
 
         public CardInfomation GetPlot()

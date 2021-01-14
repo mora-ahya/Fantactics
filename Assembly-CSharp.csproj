@@ -77,6 +77,9 @@
     <Compile Include="Assets\MyTCPConnectionRM\Scripts\Client.cs" />
     <Compile Include="Assets\MyTCPConnectionRM\Scripts\Server.cs" />
     <Compile Include="Assets\MyTCPConnectionRM\Scripts\StateObject.cs" />
+    <Compile Include="Assets\Script\Animation\AttackEffect.cs" />
+    <Compile Include="Assets\Script\Animation\BattleAnimation.cs" />
+    <Compile Include="Assets\Script\Animation\IceMagicEffect.cs" />
     <Compile Include="Assets\Script\BitCalculation.cs" />
     <Compile Include="Assets\Script\Board\Board.cs" />
     <Compile Include="Assets\Script\Board\Square.cs" />
@@ -90,6 +93,7 @@
     <Compile Include="Assets\Script\Phase\MeleePhase.cs" />
     <Compile Include="Assets\Script\Phase\MovePhase.cs" />
     <Compile Include="Assets\Script\Phase\Phase.cs" />
+    <Compile Include="Assets\Script\Phase\PhaseManager.cs" />
     <Compile Include="Assets\Script\Phase\PlottingPhase.cs" />
     <Compile Include="Assets\Script\Phase\RangePhase.cs" />
     <Compile Include="Assets\Script\Player\OnlinePlayer.cs" />
@@ -105,21 +109,25 @@
     <Compile Include="Assets\Script\UI\Card.cs" />
     <Compile Include="Assets\Script\UI\CardInfomation.cs" />
     <Compile Include="Assets\Script\UI\CardOperation.cs" />
+    <Compile Include="Assets\Script\UI\DamageUI.cs" />
     <Compile Include="Assets\Script\UI\PhaseNotice.cs" />
     <Compile Include="Assets\Script\UI\UIManager.cs" />
     <None Include="Assets\MyInitSet\Shaders\GaussianBlur.shader" />
     <None Include="Assets\Script\Shaders\SquarePattern.shader" />
+    <None Include="Assets\Script\Shaders\Explosion.shader" />
     <None Include="Assets\SU3DJPFont\Fonts\MPlusTestflight63a\LICENSE_E.txt" />
     <None Include="Assets\SU3DJPFont\Fonts\MPlusTestflight63a\README_E.txt" />
     <None Include="Assets\MyInitSet\Shaders\SimpleColor.shader" />
     <None Include="Assets\SU3DJPFont\readme_jp.txt" />
     <None Include="Assets\SU3DJPFont\readme.txt" />
+    <None Include="Assets\Script\Shaders\Ice.shader" />
     <None Include="Assets\MyInitSet\Shaders\Wave.shader" />
     <None Include="Assets\SU3DJPFont\Fonts\MPlusTestflight63a\README_J.txt" />
     <None Include="Assets\MyInitSet\Shaders\Ripple.shader" />
     <None Include="Assets\MyInitSet\Shaders\CircleGrayScale.shader" />
     <None Include="Assets\SU3DJPFont\Fonts\MPlusTestflight63a\LICENSE_J.txt" />
     <None Include="Assets\Script\Shaders\PhaseUIColor.shader" />
+    <None Include="Assets\Script\Shaders\Frost.shader" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>C:/Users/admin/Documents/Fantactics/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>
