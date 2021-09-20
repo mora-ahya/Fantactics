@@ -10,17 +10,17 @@ namespace FantacticsScripts
         CardOperation.MouseButtonDownEventHandler mouseButtonDownEventHandler;
         CardOperation.MouseButtonUpEventHandler mouseButtonUpEventHandler;
 
-        readonly Card[] actions = new Card[2];
-
         [SerializeField] BoxCollider2D[] cardFrames = default; //colliderに
         [SerializeField] RectTransform centerOfHandObjects = default;
+
+        PlottingPhaseResult result;
 
         void Awake()
         {
             mouseButtonLongPressEventHandler = new CardOperation.MouseButtonLongPressEventHandler(LongPressMouseButtonEvent);
             mouseButtonDownEventHandler = new CardOperation.MouseButtonDownEventHandler(PressMouseButtonEvent);
             mouseButtonUpEventHandler = new CardOperation.MouseButtonUpEventHandler(ReleaseMouseButtonEvent);
-            result = new byte[3];
+            result = new PlottingPhaseResult();
         }
 
         /// <summary>
@@ -28,10 +28,8 @@ namespace FantacticsScripts
         /// </summary>
         public override void Initialize()
         {
-            actions[0] = null;
-            actions[1] = null;
-            result[1] = 0;
-            result[2] = 0;
+            result.Clear();
+
             CameraManager.Instance.SetTarget(manager.GetSelfPlayer().gameObject);
             CardOperation.Instance.ResetHandsObjectsPosition();
             UIManager.Instance.SwitchUI(PhaseEnum.PlottingPhase, true);
@@ -40,14 +38,13 @@ namespace FantacticsScripts
             CardOperation.Instance.OnMouseButtonUp += mouseButtonUpEventHandler;
         }
 
-        public override byte[] GetResult()
+        public override PhaseResult GetResult()
         {
             CardOperation.Instance.OnMouseButtonLongPress -= mouseButtonLongPressEventHandler;
             CardOperation.Instance.OnMouseButtonDown -= mouseButtonDownEventHandler;
             CardOperation.Instance.OnMouseButtonUp -= mouseButtonUpEventHandler;
             UIManager.Instance.SwitchUI(PhaseEnum.PlottingPhase, false);
-            result[1] = (byte)actions[0].CardInfo.ID;
-            result[2] = (byte)actions[1].CardInfo.ID;
+
             return result;
         }
 
@@ -64,7 +61,7 @@ namespace FantacticsScripts
             index = Mathf.Clamp(index, 0, CardOperation.Instance.NumberOfHands - 1);
             Card tmp = CardOperation.Instance.GetHandsObject(index);
 
-            if (tmp.OnMouse(clickPoint) && tmp != actions[0] && tmp != actions[1])
+            if (tmp.OnMouse(clickPoint) && tmp != result.Actions[0] && tmp != result.Actions[1])
             {
                 selectedCard = tmp;
                 selectedCard.Emphasize(true);
@@ -93,12 +90,12 @@ namespace FantacticsScripts
             int index = (Input.mousePosition.x < Screen.width / 2) ? 0 : 1;
             if (cardFrames[index].OverlapPoint(Input.mousePosition))
             {
-                if (actions[index] != null)
+                if (result.Actions[index] != null)
                 {
-                    actions[index].ResetPosition((CardOperation.Instance.NumberOfHands - 1) / 2f);
+                    result.Actions[index].ResetPosition((CardOperation.Instance.NumberOfHands - 1) / 2f);
                 }
                 heldCard.Emphasize(false);
-                actions[index] = heldCard;
+                result.Actions[index] = heldCard;
                 heldCard.transform.position = cardFrames[index].transform.position;
                 selectedCard = null;
             }
@@ -113,12 +110,12 @@ namespace FantacticsScripts
         
         public void DecidePlots()
         {
-            if (actions[0] == null || actions[1] == null)
+            if (result.Actions[0] == null || result.Actions[1] == null)
                 return;
 
             Player player = manager.GetSelfPlayer();
-            player.Information.SetPlot(0, actions[0].CardInfo.ID);
-            player.Information.SetPlot(1, actions[1].CardInfo.ID);
+            player.Information.SetPlot(0, result.Actions[0].CardInfo.ID);
+            player.Information.SetPlot(1, result.Actions[1].CardInfo.ID);
             manager.EndPhase(this);
             //player.EndTurn();
         }

@@ -10,31 +10,32 @@ namespace FantacticsScripts
         [SerializeField] Board board = default;
         [SerializeField] GameObject directionUI = default;
         [SerializeField] SquareTarget squareTarget = default;
+
+        RangePhaseResult result;
+
         int startSquare;
-        int targetSquare;
         CardInfomation usedCardInformation;
         bool duringTheMove;
 
         void Awake()
         {
-            result = new byte[2];
+            result = new RangePhaseResult();
         }
 
         public override void Initialize()
         {
             Player player = manager.GetSelfPlayer();
             startSquare = player.Information.CurrentSquare;
-            targetSquare = startSquare;
+            result.TargetSquare = startSquare;
             usedCardInformation = player.GetPlot();
             squareTarget.Initialize(player.transform, MoveAim, EndMove);
             UIManager.Instance.SwitchUI(PhaseEnum.RangePhase, true);
         }
 
-        public override byte[] GetResult()
+        public override PhaseResult GetResult()
         {
             UIManager.Instance.SwitchUI(PhaseEnum.RangePhase, false);
             directionUI.SetActive(false);
-            result[1] = (byte)targetSquare;
             return result;
         }
 
@@ -51,13 +52,13 @@ namespace FantacticsScripts
 
         public void MoveAim(int dir)
         {
-            if (!board.CanMoveToDirection(targetSquare, BoardDirection.Up + dir))
+            if (!board.CanMoveToDirection(result.TargetSquare, BoardDirection.Up + dir))
             {
                 Debug.Log("Nothing Square!");
                 return;
             }
 
-            int tmp = board.GetSquare(targetSquare).GetAdjacentSquares(BoardDirection.Up + dir).Number;
+            int tmp = board.GetSquare(result.TargetSquare).GetAdjacentSquares(BoardDirection.Up + dir).Number;
 
             if (board.GetManhattanDistance(startSquare, tmp) > usedCardInformation.maxRange)
             {
@@ -66,12 +67,12 @@ namespace FantacticsScripts
             }
 
             squareTarget.StartMove(BoardDirection.Up + dir);
-            targetSquare = tmp;
+            result.TargetSquare = tmp;
         }
 
         public void DecideTarget()
         {
-            int dis = board.GetManhattanDistance(startSquare, targetSquare);
+            int dis = board.GetManhattanDistance(startSquare, result.TargetSquare);
             if (dis > usedCardInformation.maxRange || dis < usedCardInformation.minRange)
             {
                 Debug.Log("Over Range!");

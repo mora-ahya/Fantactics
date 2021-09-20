@@ -4,46 +4,49 @@ using UnityEngine;
 
 namespace FantacticsScripts
 {
-    public class CharacterAnimation : MonoBehaviour
+    public class MoveAnimation : MonoBehaviour
     {
+        public bool IsRunning { get; private set; }
+
+        Player movingPlayer;
         BoardDirection[] moveDirections = new BoardDirection[8];
         int numberOfMoves;
         int maxNumberOfMoves;
         float moveAmountBetweenSquares = 0f;
         float characterMoveSpeed = 1f;
-        System.Action func;
 
         public void Act()
         {
-            func?.Invoke();
-            Debug.Log(true);
+            MoveFollowingDirections();
         }
 
-        public void SetMovement(int maxNumOfMoves, int offset, byte[] directions)
+        public void SetAnimation(Player player, int maxNumOfMoves, int offset, byte[] directions)
         {
+            movingPlayer = player;
             maxNumberOfMoves = maxNumOfMoves;
             FantacticsBitConverter.ToBoardDirections(maxNumberOfMoves, offset, directions, moveDirections);
             numberOfMoves = 0;
-            func = MoveAlongDirections;
+            IsRunning = true;
             CameraManager.Instance.SetTarget(gameObject);
         }
 
-        void MoveAlongDirections()
+        void MoveFollowingDirections()
         {
-            moveAmountBetweenSquares += characterMoveSpeed;
+            float moveSpeed = characterMoveSpeed * Time.deltaTime;
+            moveAmountBetweenSquares += moveSpeed;
             if (moveAmountBetweenSquares > Square.Side)
             {
-                MoveBetweenSquares(moveDirections[numberOfMoves], characterMoveSpeed - (moveAmountBetweenSquares - Square.Side));
+                MoveBetweenSquares(moveDirections[numberOfMoves], moveSpeed - (moveAmountBetweenSquares - Square.Side));
                 moveAmountBetweenSquares = 0f;
                 numberOfMoves++;
                 if (maxNumberOfMoves == numberOfMoves)
                 {
-                    func = null;
+                    IsRunning = false;
                 }
             }
             else
             {
-                MoveBetweenSquares(moveDirections[numberOfMoves], characterMoveSpeed);
+                MoveBetweenSquares(moveDirections[numberOfMoves], moveSpeed);
             }
         }
 
@@ -52,26 +55,21 @@ namespace FantacticsScripts
             switch (dir)
             {
                 case BoardDirection.Up:
-                    transform.position += Vector3.forward * amount;
+                    movingPlayer.gameObject.transform.position += Vector3.forward * amount;
                     break;
 
                 case BoardDirection.Right:
-                    transform.position += Vector3.right * amount;
+                    movingPlayer.gameObject.transform.position += Vector3.right * amount;
                     break;
 
                 case BoardDirection.Down:
-                    transform.position += Vector3.back * amount;
+                    movingPlayer.gameObject.transform.position += Vector3.back * amount;
                     break;
 
                 case BoardDirection.Left:
-                    transform.position += Vector3.left * amount;
+                    movingPlayer.gameObject.transform.position += Vector3.left * amount;
                     break;
             }
-        }
-
-        public bool IsAnimationOver()
-        {
-            return func == null;
         }
     }
 }

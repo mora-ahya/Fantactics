@@ -41,9 +41,10 @@
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
-            // Albedo comes from a texture tinted by color
-			float2 offset = float2(_Rotation, 0);
+            //上ほど透明度を高くして揺らぎを与えれば、炎ぽくなるかもしれない
+			float2 offset = float2(frac(_Time.x), 1.0f - frac(_Time.y));
             fixed4 c = tex2D (_MainTex, frac(IN.uv_MainTex + offset));
+            //テクスチャをずらして重ねる
 			IN.uv_MainTex.x *= 1.25f;
 			c += tex2D(_MainTex, frac(IN.uv_MainTex + offset));
 			IN.uv_MainTex.y *= 1.25f;
@@ -51,13 +52,8 @@
 			IN.uv_MainTex.x *= 1.25f;
 			c += tex2D(_MainTex, frac(IN.uv_MainTex + offset));
             o.Emission = c.rgb * 2.0f;
-			float fresnel = pow(saturate(dot(IN.viewDir, IN.worldNormal)), 1.5f);
-			o.Emission *= fresnel;
-			float border = (abs(dot(IN.viewDir, IN.worldNormal)));
-			float alpha = (border * (1 - 0.25f) + 0.25f);
-            // Metallic and smoothness come from slider variables
-            //o.Emission = float3(1.0f, 1.0f, 1.0f);
-			o.Alpha = alpha;
+			o.Alpha = c.r * pow(saturate(dot(IN.viewDir, IN.worldNormal)), 2.0f);
+            clip(o.Alpha);
         }
         ENDCG
     }

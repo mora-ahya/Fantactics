@@ -14,6 +14,7 @@ namespace FantacticsScripts
         public string Name { get; protected set; }
         public int ID { get; protected set; }
         public CardType Type { get; protected set; }
+        public int AttackEffectID { get; protected set; }
 
         /// <summary>
         /// 
@@ -26,7 +27,7 @@ namespace FantacticsScripts
         /// <param name="name"></param>
         /// <param name="id"></param>
         /// <param name="type"></param>
-        public CardInfomation(Sprite sprite = null, int minRan = 1, int maxRan = 1, int blast = 0, int power = 1, string name = null, int id = -1, CardType type = 0)
+        public CardInfomation(Sprite sprite = null, int minRan = 1, int maxRan = 1, int blast = 0, int power = 1, string name = null, int id = -1, CardType type = 0, int effectID = -1)
         {
             CardSprite = sprite;
             minRange = minRan;
@@ -36,6 +37,7 @@ namespace FantacticsScripts
             Name = name;
             ID = id;
             Type = type;
+            AttackEffectID = effectID;
         }
     }
 }

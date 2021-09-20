@@ -7,14 +7,17 @@ namespace FantacticsScripts
     public class BattleAnimation : MonoBehaviour
     {
         public GameScene GameScene { get; private set; }
+        public bool IsRunning { get; private set; }
         AttackEffect attackEffect;
         Player attacker;
         int victimIDs;
 
-        public void StartAnimation(AttackEffect effect, int squarePos)
+        public void SetAnimation(Player atk, AttackEffect effect, int targetSquare)
         {
+            IsRunning = true;
+            attacker = atk;
             attackEffect = effect;
-            attackEffect.transform.position = Board.SquareNuberToWorldPosition(squarePos);
+            attackEffect.transform.position = Board.SquareNuberToWorldPosition(targetSquare);
             attackEffect.Initialize();
         }
 
@@ -28,7 +31,18 @@ namespace FantacticsScripts
             if (attackEffect.IsEnd)
             {
                 attackEffect = null;
+                IsRunning = false;
             }
+        }
+
+        void Phase1()
+        {
+            //アタッカーにカメラを向ける
+        }
+
+        void Phase2()
+        {
+            //エフェクトにカメラを向ける
         }
     }
 }

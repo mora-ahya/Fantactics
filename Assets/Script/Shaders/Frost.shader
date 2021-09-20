@@ -12,7 +12,7 @@
 			Tags { "Queue" = "Transparent" }
 			LOD 200
 
-			Cull Off
+			Cull back
 			ZWrite On
 			Blend SrcAlpha One
 
@@ -44,12 +44,12 @@
 
 			void surf(Input IN, inout SurfaceOutputStandard o)
 			{
-				float t = tex2D(_MainTex, IN.uv_MainTex/* + frac(float2(_Time.x, _Time.x / 2))*/).x;
 				o.Emission = _Color;
 				//o.Emission.r -= t / 5.0f;
 
 				float border = 1 - distance(IN.uv_MainTex, float2(0.5f, 0.5f)) / 0.5f;
-				o.Alpha = border < 0.0f ? 0.0f : border * t * _Vanish;
+				clip(border);
+				o.Alpha = border * tex2D(_MainTex, IN.uv_MainTex/* + frac(float2(_Time.x, _Time.x / 2))*/).x * _Vanish;
 			}
 			ENDCG
 		}

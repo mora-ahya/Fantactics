@@ -33,7 +33,7 @@ namespace FantacticsScripts
 
         void Update()
         {
-            //CameraManager.Instance.SetOffset(20, 50f, -30f);
+            //CameraManager.Instance.SetOffset(20, 20f, -30f);
             //CameraManager.Instance.SetTarget(iceModels[0]);
             //phase?.Invoke();
         }

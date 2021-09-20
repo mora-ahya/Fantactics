@@ -15,13 +15,13 @@ namespace FantacticsScripts
         [SerializeField] PhaseNotice phaseNotice = default;
         [SerializeField] PhaseManager phaseManager = default;
         [SerializeField] Player[] players = default;
+        [SerializeField] FieldAnimation fieldAnimation = default;
         int currentPlayerID;
         int[] actionOrder;//playersのインデックスを行動順に並べる
         int turn;
         int maxPlayer = 1;
         PhaseEnum currentPhaseEnum;
         Phase currentPhase;
-        CharacterAnimation currentAnimation;
 
         void Start()
         {
@@ -47,13 +47,26 @@ namespace FantacticsScripts
 
         void Process()
         {
-            process?.Invoke();
-
             CameraManager.Instance.Act();
             CardOperation.Instance.Act();
-            currentPhase?.Act();
+            process?.Invoke();
             if (phaseNotice.IsActing)
                 phaseNotice.Act();
+        }
+
+        void PhaseProcess()
+        {
+            currentPhase?.Act();
+        }
+
+        void AnimationProcess()
+        {
+            fieldAnimation.Act();
+            if (fieldAnimation.IsEnd())
+            {
+                process = null;
+                TransitionToTheNextTurn();
+            }
         }
 
         public void SetCharacter(int charaNum)
@@ -61,74 +74,81 @@ namespace FantacticsScripts
 
         }
 
-        public override void NotifyPhaseEnd(byte[] result)
+        public override void NotifyPhaseEnd(PhaseResult result)
         {
-            Player tmp = players[currentPlayerID];
-            currentAnimation = tmp.CharaAnim;
+            Player playerTmp = players[currentPlayerID];
             currentPhase = null;
-            switch (currentPhaseEnum)
-            {
-                case PhaseEnum.PlottingPhase:
-                    for (int i = 0; i < maxPlayer - 1; i++)
-                    {
-                        //autoPlayerがプロットを決める
-                    }
-                    DecideActionOrder();
-                    AllocateTurnToPlayer();
-                    break;
+            //switch (currentPhaseEnum)
+            //{
+            //    case PhaseEnum.PlottingPhase:
+            //        for (int i = 0; i < maxPlayer - 1; i++)
+            //        {
+            //            //autoPlayerがプロットを決める
+            //        }
+            //        DecideActionOrder();
+            //        AllocateTurnToPlayer();
+            //        break;
 
-                case PhaseEnum.MovePhase:
-                    currentAnimation.SetMovement(result[1], 2, result);
-                    process = WaitCharacterAnimation;
-                    break;
+            //    case PhaseEnum.MovePhase:
+            //        fieldAnimation.SetMoveAnimation(playerTmp, result[1], 2, result);
+            //        //プレイヤーによってマス位置を変える(向き次第)
+            //        board.GetSquare(playerTmp.Information.CurrentSquare).PlayerExit();
+            //        playerTmp.Information.SetCurrentSquare(result[4]);
+            //        board.GetSquare(result[4]).PlayerEnter(currentPlayerID);
+            //        process = AnimationProcess;
+            //        break;
 
-                case PhaseEnum.RangePhase:
-                    process = WaitCharacterAnimation;
-                    break;
+            //    case PhaseEnum.RangePhase:
+            //        //battleAnimation;
+            //        CalculateRangeDamage(result[1]);
+            //        process = AnimationProcess;
+            //        break;
 
-                case PhaseEnum.MeleePhase:
-                    process = WaitCharacterAnimation;
-                    break;
-            }
+            //    case PhaseEnum.MeleePhase:
+            //        process = AnimationProcess;
+            //        break;
+            //}
+
+            //void CalculateRangeDamage(int targetSquare)
+            //{
+            //    CardInfomation cardTmp = playerTmp.GetPlot();
+            //    int dis = 0;
+            //    foreach(Player p in players)
+            //    {
+            //        dis = board.GetManhattanDistance(targetSquare, p.Information.CurrentSquare);
+            //        if (dis > cardTmp.Blast)
+            //        {
+            //            continue;
+            //        }
+            //        //そのプレイヤーのダメージフラグを立てて、ダメージを保存
+            //    }
+            //}
         }
 
         void TransitionToTheNextTurn()
         {
-            if (turn == maxPlayer - 1)
+            if (turn != maxPlayer - 1)
             {
-                CurrentSegment++;
-                turn = 0;
-                if (CurrentSegment == 2)
-                {
-                    CurrentSegment = 0;
-                    ThrowAwayHands();
-                    DrawCards();
-                    currentPhaseEnum = PhaseEnum.PlottingPhase;
-                    currentPhase = phaseManager.GetPhase(currentPhaseEnum);
-                    currentPhase.Initialize();
-                    //players[0].StartTurn(phases[(int)currentPhase]);
-                    phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
-                    return;
-                }
-                DecideActionOrder();
+                AllocateTurnToPlayer();
+                return;
             }
 
-            AllocateTurnToPlayer();
-        }
-        /*
-        void PhaseProcess()
-        {
-            players[0].Act();
-        }
-        */
-        void WaitCharacterAnimation()
-        {
-            currentAnimation.Act();
-            if (!currentAnimation.IsAnimationOver())
+            CurrentSegment++;
+            turn = 0;
+            if (CurrentSegment == 2)
+            {
+                CurrentSegment = 0;
+                ThrowAwayHands();
+                DrawCards();
+                currentPhaseEnum = PhaseEnum.PlottingPhase;
+                currentPhase = phaseManager.GetPhase(currentPhaseEnum);
+                currentPhase.Initialize();
+                //players[0].StartTurn(phases[(int)currentPhase]);
+                phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
                 return;
-
-            process = null;
-            TransitionToTheNextTurn();
+            }
+            DecideActionOrder();
+            AllocateTurnToPlayer();
         }
 
         /// <summary>

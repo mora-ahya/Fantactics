@@ -14,6 +14,8 @@ namespace FantacticsScripts
         public int ExclusionCards;
         public int Equipments;
         public int CurrentSquare { get; private set; }
+        public int AmountOfDamage = 0;
+        public bool IsDamaged = false;
         public readonly Character Chara;
         readonly int[] plots;
 

@@ -91,16 +91,20 @@
         {
 			o.Albedo = _Color;
 			o.Emission = _Color;//float4(1.0f, 1.0f, 1.0f, 1.0f);
+
+            //ノイズテクスチャの値が閾値より小さいときピクセルを破棄
 			float t = tex2D(_MainTex, IN.uv_MainTex).x;
-			float tmp = t > _Vanish && t < _Vanish + _EmissionRange ? 1.0f : 0.0f;
-			t = t > _Vanish ? 1.0f : 0;
+            clip(t - _Vanish);
 			
-			float fresnel = 1.0f - pow(saturate(dot(IN.viewDir, IN.worldNormal)), 1.5f);
-			o.Emission *= fresnel;
-			float border = 1 - (abs(dot(IN.viewDir, IN.worldNormal)));
-			float alpha = (border * (1 - 0.25f) + 0.25f);
-			o.Emission += float3(tmp, tmp, tmp);
-            o.Alpha = tmp == 1.0f ? tmp : alpha * t;
+            half alpha = dot(IN.viewDir, IN.worldNormal);
+			o.Emission *= (1.0f - pow(saturate(alpha), 3.0f));
+		    alpha = 1.0f - (abs(alpha));
+			alpha = (alpha * (1 - 0.25f) + 0.25f);
+
+            //消える箇所の周辺なら色を白にし、透明度をリセットする
+            t = step(t, _Vanish + _EmissionRange);
+			o.Emission += t;
+            o.Alpha = max(t, alpha);
 			//o.Alpha = 1.0f;
         }
         ENDCG

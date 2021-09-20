@@ -11,9 +11,7 @@ namespace FantacticsScripts
         System.Action phase;
 
         public PlayerInformation Information { get; private set; }
-        public CharacterAnimation CharaAnim => charaAnim;
         Phase currentPhase;
-        [SerializeField] CharacterAnimation charaAnim = default;
         [SerializeField] Board board = default;
         [SerializeField] OfflineGameScene gameScene = default;
 
@@ -26,7 +24,7 @@ namespace FantacticsScripts
             Information.SetCurrentSquare(5);
             board.GetSquare(Information.CurrentSquare).PlayerEnter(Information.PlayerID);
             transform.position = new Vector3(Information.CurrentSquare % Board.Width + 0.5f, 0, Information.CurrentSquare / Board.Width + 0.5f) * Square.Side;
-            transform.position += Vector3.up;
+            transform.position += Vector3.up * 13.5f;
             //PlottingPhaseInit();
         }
 
@@ -47,8 +45,6 @@ namespace FantacticsScripts
         /// <param name="isInversion"></param>
         public void CalculateCurrentSquare(int maxNumOfMoves, int offset, byte[] directions, bool isInversion)
         {
-            charaAnim.SetMovement(maxNumOfMoves, offset, directions);
-
             board.GetSquare(Information.CurrentSquare).PlayerExit();
 
             int x = 0, y = 0;
@@ -85,6 +81,11 @@ namespace FantacticsScripts
         public CardInfomation GetPlot()
         {
             return Information.GetPlot(gameScene.CurrentSegment);
+        }
+
+        public void SetDamage(int amount)
+        {
+
         }
 
         /// <summary>

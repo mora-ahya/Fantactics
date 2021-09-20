@@ -25,7 +25,7 @@ namespace FantacticsScripts
         int maxPlayer = 1;
         PhaseEnum currentPhaseEnum;
         Phase currentPhase;
-        CharacterAnimation currentAnimation;
+        MoveAnimation moveAnimation;
 
         void Start()
         {
@@ -61,9 +61,9 @@ namespace FantacticsScripts
                 phaseNotice.Act();
         }
 
-        public override void NotifyPhaseEnd(byte[] result)
+        public override void NotifyPhaseEnd(PhaseResult result)
         {
-            client.StartSend(result);
+            //client.StartSend(result);
         }
 
         void SendPlayerActionEvent(object sender)
@@ -142,7 +142,6 @@ namespace FantacticsScripts
             void ReceiveAction()
             {
                 Player tmp = players[currentPlayerID];
-                currentAnimation = tmp.CharaAnim;
                 switch (PhaseEnum.PlottingPhase + rData[2])
                 {
                     case PhaseEnum.MovePhase:
@@ -206,8 +205,8 @@ namespace FantacticsScripts
 
         void WaitCharacterAnimation()
         {
-            currentAnimation.Act();
-            if (!currentAnimation.IsAnimationOver())
+            moveAnimation.Act();
+            if (!moveAnimation.IsRunning)
                 return;
 
             TransitionToTheNextTurn();
