@@ -18,9 +18,34 @@ namespace FantacticsScripts
         int[] redBitFlag = new int[((Width * Height) >> 5) + 1];
         float[] redBitFlagF = new float[((Width * Height) >> 5) + 1];
 
-        public static Vector3 SquareNuberToWorldPosition(int squareNum)
+        public static Vector3 SquareNumberToWorldPosition(int squareNum)
         {
             return new Vector3((squareNum % Width + 0.5f) * Square.Side, 0f, (squareNum / Width + 0.5f) * Square.Side);
+        }
+
+        public static void SquareNumberToWorldPosition(int squareNum, ref Vector3 dest)
+        {
+            dest.Set((squareNum % Width + 0.5f) * Square.Side, 0f, (squareNum / Width + 0.5f) * Square.Side);;
+        }
+
+        public static Vector3 GetVectorByDirection(BoardDirection dir)
+        {
+            switch (dir)
+            {
+                case BoardDirection.Up:
+                    return Vector3.forward;
+
+                case BoardDirection.Right:
+                    return Vector3.right;
+
+                case BoardDirection.Down:
+                    return Vector3.back;
+
+                case BoardDirection.Left:
+                    return Vector3.left;
+            }
+
+            return Vector3.zero;
         }
 
         public void Initialize()
@@ -63,7 +88,7 @@ namespace FantacticsScripts
 
         public bool CanMoveToDirection(int squareNum, BoardDirection dir)
         {
-            return squares[squareNum].GetAdjacentSquares(dir) != null;
+            return squares[squareNum].GetAdjacentSquare(dir) != null;
         }
 
         public bool PlayerIsInSquare(int squareNum)
@@ -73,7 +98,7 @@ namespace FantacticsScripts
 
         public bool PlayerIsInSquare(int squareNum, BoardDirection dir)
         {
-            return squares[squareNum].GetAdjacentSquares(dir).HavingPlayerID != -1;
+            return squares[squareNum].GetAdjacentSquare(dir).HavingPlayerID != -1;
         }
 
         public int GetManhattanDistance(int squareNum1, int squareNum2)

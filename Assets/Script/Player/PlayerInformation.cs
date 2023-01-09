@@ -7,6 +7,7 @@ namespace FantacticsScripts
     {
         public int PlayerID { get; private set; }
         public int Team { get; private set; }
+        public BoardDirection Direction;
         public int CurrentHP;
         public int Deck;
         public int Hands;

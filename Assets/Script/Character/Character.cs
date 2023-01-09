@@ -14,6 +14,7 @@ namespace FantacticsScripts
         public int AssaultPower { get; protected set; }//突進ダメージ
         public int AssaultCounterPower { get; protected set; }//被突進ダメージ
         public int EquipmentsMask { get; protected set; } //デッキから装備カードを分けるためのbitマスク
+        public Vector3 HeadPosition { get; protected set; }
         protected CardInfomation[] cards;
 
         public CardInfomation GetCard(int num)

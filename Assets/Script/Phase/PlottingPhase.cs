@@ -30,20 +30,27 @@ namespace FantacticsScripts
         {
             result.Clear();
 
-            CameraManager.Instance.SetTarget(manager.GetSelfPlayer().gameObject);
+            //CameraManager.Instance.SetTarget(manager.GetSelfPlayer().gameObject);
             CardOperation.Instance.ResetHandsObjectsPosition();
-            UIManager.Instance.SwitchUI(PhaseEnum.PlottingPhase, true);
+            UIManager.Instance.ShowPhaseUI(PhaseEnum.PlottingPhase, true);
             CardOperation.Instance.OnMouseButtonLongPress += mouseButtonLongPressEventHandler;
             CardOperation.Instance.OnMouseButtonDown += mouseButtonDownEventHandler;
             CardOperation.Instance.OnMouseButtonUp += mouseButtonUpEventHandler;
         }
 
-        public override PhaseResult GetResult()
+        public override void End()
         {
             CardOperation.Instance.OnMouseButtonLongPress -= mouseButtonLongPressEventHandler;
             CardOperation.Instance.OnMouseButtonDown -= mouseButtonDownEventHandler;
             CardOperation.Instance.OnMouseButtonUp -= mouseButtonUpEventHandler;
-            UIManager.Instance.SwitchUI(PhaseEnum.PlottingPhase, false);
+            UIManager.Instance.ShowPhaseUI(PhaseEnum.PlottingPhase, false);
+            CardOperation.Instance.ResetHandsObjectsPosition();
+        }
+
+        public override PhaseResult GetResult()
+        {
+            if (result.Actions[0] == null || result.Actions[1] == null)
+                return null;
 
             return result;
         }
@@ -82,9 +89,9 @@ namespace FantacticsScripts
             }
         }
 
-        protected void ReleaseMouseButtonEvent(ref Card selectedCard, ref Card heldCard)
+        protected void ReleaseMouseButtonEvent(ref Card selectedCard, ref Card holdingCard)
         {
-            if (heldCard == null)
+            if (holdingCard == null)
                 return;
 
             int index = (Input.mousePosition.x < Screen.width / 2) ? 0 : 1;
@@ -94,31 +101,18 @@ namespace FantacticsScripts
                 {
                     result.Actions[index].ResetPosition((CardOperation.Instance.NumberOfHands - 1) / 2f);
                 }
-                heldCard.Emphasize(false);
-                result.Actions[index] = heldCard;
-                heldCard.transform.position = cardFrames[index].transform.position;
+                holdingCard.Emphasize(false);
+                result.Actions[index] = holdingCard;
+                holdingCard.transform.position = cardFrames[index].transform.position;
                 selectedCard = null;
             }
             else
             {
-                heldCard.ResetPosition((CardOperation.Instance.NumberOfHands - 1) / 2f);
-                heldCard.Emphasize(false);
+                holdingCard.ResetPosition((CardOperation.Instance.NumberOfHands - 1) / 2f);
+                holdingCard.Emphasize(false);
             }
 
-            heldCard = null;
+            holdingCard = null;
         }
-        
-        public void DecidePlots()
-        {
-            if (result.Actions[0] == null || result.Actions[1] == null)
-                return;
-
-            Player player = manager.GetSelfPlayer();
-            player.Information.SetPlot(0, result.Actions[0].CardInfo.ID);
-            player.Information.SetPlot(1, result.Actions[1].CardInfo.ID);
-            manager.EndPhase(this);
-            //player.EndTurn();
-        }
-        
     }
 }

@@ -30,7 +30,7 @@ namespace FantacticsScripts
         void Start()
         {
             board.Initialize();
-            board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquares(BoardDirection.Right).Number, true);
+            board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquare(BoardDirection.Right).Number, true);
             board.ApplayRedBitFlag();
             actionOrder = new int[6] { 0, 1, 2, 3, 4, 5 };
             players[0].Initialize(new PlayerInformation(new TestCharacter()));
@@ -57,11 +57,9 @@ namespace FantacticsScripts
             CameraManager.Instance.Act();
             CardOperation.Instance.Act();
             currentPhase?.Act();
-            if (phaseNotice.IsActing)
-                phaseNotice.Act();
         }
 
-        public override void NotifyPhaseEnd(PhaseResult result)
+        public override void NotifyPhaseEnd(int phaseEnum)
         {
             //client.StartSend(result);
         }

@@ -6,7 +6,7 @@ namespace FantacticsScripts
 {
     public class FantacticsBitConverter
     {
-        public static void ToBoardDirections(int numOfMoves, int offset, byte[] source, BoardDirection[] destination)
+        public static void BitToBoardDirections(int numOfMoves, int offset, byte[] source, BoardDirection[] destination)
         {
             for (int i = 0; i < numOfMoves; i++)
             {

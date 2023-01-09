@@ -14,6 +14,7 @@ namespace FantacticsScripts
         Phase currentPhase;
         [SerializeField] Board board = default;
         [SerializeField] OfflineGameScene gameScene = default;
+        [SerializeField] PhaseManager phaseManager = default;
 
         public void Initialize(PlayerInformation pInfo)
         {
@@ -22,9 +23,8 @@ namespace FantacticsScripts
             Information = pInfo;
             Information.Deck = (1 << Information.Chara.Hp) - 1;
             Information.SetCurrentSquare(5);
-            board.GetSquare(Information.CurrentSquare).PlayerEnter(Information.PlayerID);
-            transform.position = new Vector3(Information.CurrentSquare % Board.Width + 0.5f, 0, Information.CurrentSquare / Board.Width + 0.5f) * Square.Side;
-            transform.position += Vector3.up * 13.5f;
+            board.GetSquare(Information.CurrentSquare).AddPlayer(Information.PlayerID);
+            transform.position = Board.SquareNumberToWorldPosition(Information.CurrentSquare);
             //PlottingPhaseInit();
         }
 
@@ -32,6 +32,38 @@ namespace FantacticsScripts
         {
             //phase?.Invoke();
             
+        }
+
+        public void StorePlottingPhaseResult()
+        {
+            PhaseResult resultTmp = phaseManager.GetPhaseResult(PhaseEnum.PlottingPhase);
+
+            if (resultTmp == null)
+            {
+                return;
+            }
+
+            PlottingPhaseResult result = (PlottingPhaseResult)resultTmp;
+
+            Information.SetPlot(0, result.Actions[0].CardInfo.ID);
+            Information.SetPlot(1, result.Actions[1].CardInfo.ID);
+
+            gameScene.OnDecidedPlayerPlotting();
+        }
+
+        public void StoreMovePhaseResult(MovePhaseResult result)
+        {
+            //fieldAnimation.SetMoveAnimation(this, result);
+            //プレイヤーによってマス位置を変える(向き次第)
+            board.GetSquare(Information.CurrentSquare).RemovePlayer();
+            Information.SetCurrentSquare(result.DestSquare);
+            board.GetSquare(result.DestSquare).AddPlayer(Information.PlayerID);
+            //process = AnimationProcess;
+        }
+
+        public void StoreRangePhaseResult(RangePhaseResult result)
+        {
+            //process = AnimationProcess;
         }
 
         /// <summary>
@@ -45,7 +77,7 @@ namespace FantacticsScripts
         /// <param name="isInversion"></param>
         public void CalculateCurrentSquare(int maxNumOfMoves, int offset, byte[] directions, bool isInversion)
         {
-            board.GetSquare(Information.CurrentSquare).PlayerExit();
+            board.GetSquare(Information.CurrentSquare).RemovePlayer();
 
             int x = 0, y = 0;
             BoardDirection tmp;
@@ -75,7 +107,7 @@ namespace FantacticsScripts
             }
 
             Information.SetCurrentSquare(Information.CurrentSquare + Board.Width * y + x);
-            board.GetSquare(Information.CurrentSquare).PlayerEnter(Information.PlayerID);
+            board.GetSquare(Information.CurrentSquare).AddPlayer(Information.PlayerID);
         }
 
         public CardInfomation GetPlot()
@@ -86,6 +118,52 @@ namespace FantacticsScripts
         public void SetDamage(int amount)
         {
 
+        }
+
+        public Vector3 GetCharacterHeadPosition()
+        {
+            return Information.Chara.HeadPosition + transform.position;
+        }
+
+        /// <summary>
+        /// 山札から規定数のカードを手札に加える(seedを元に擬似ランダム)
+        /// </summary>
+        public void DrawCards(int seed)
+        {
+            int i;
+            int count = 0;
+            while (count != Information.Chara.Imagination)
+            {
+                if (Information.Deck == 0)
+                    ReturnDeckFromDiscards();
+
+                i = BitCalculation.GetNthBit(Information.Deck, Random.Range(0, BitCalculation.BitCount(Information.Deck)));
+                Information.Deck &= ~i;
+               Information.Hands |= i;
+                CardOperation.Instance.SetCardInfo(count, Information.Chara.GetCard(BitCalculation.CheckWhichBitIsOn(i)));
+                count++;
+            }
+            CardOperation.Instance.NumberOfHands = count;
+            Debug.Log("山札：" + System.Convert.ToString(Information.Deck, 2));
+            Debug.Log("手札：" + System.Convert.ToString(Information.Hands, 2));
+        }
+
+        /// <summary>
+        /// 捨て札をすべて山札に戻す
+        /// </summary>
+        public void ReturnDeckFromDiscards()
+        {
+            Information.Deck = Information.Discards;
+            Information.Deck = Information.Discards = 0;
+        }
+
+        /// <summary>
+        /// 手札を捨てる
+        /// </summary>
+        public void ThrowAwayHands()
+        {
+            Information.Deck = Information.Discards |= Information.Deck = Information.Hands;
+            Information.Hands = 0;
         }
 
         /// <summary>

@@ -16,6 +16,7 @@ namespace FantacticsScripts
             AssaultPower = 0;//突進ダメージ
             AssaultCounterPower = 0;//被突進ダメージ
             EquipmentsMask = 0;
+            HeadPosition = new Vector3(0f, 11.45f, 0f);
 
             cards = new CardInfomation[Hp];
             MakeCard();

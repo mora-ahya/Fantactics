@@ -28,7 +28,7 @@ namespace FantacticsScripts
         void Start()
         {
             board.Initialize();
-            board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquares(BoardDirection.Right).Number, true);
+            board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquare(BoardDirection.Right).Number, true);
             board.ApplayRedBitFlag();
             playerSegments = new System.Tuple<int, int>[6];
             actionOrder = new int[6] { 0, 1, 2, 3, 4, 5 };
@@ -121,7 +121,6 @@ namespace FantacticsScripts
                 return;
             }
 
-            phaseNotice.Act();
         }
 
         bool WaitPlayers()

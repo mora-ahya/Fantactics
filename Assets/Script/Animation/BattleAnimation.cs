@@ -17,7 +17,7 @@ namespace FantacticsScripts
             IsRunning = true;
             attacker = atk;
             attackEffect = effect;
-            attackEffect.transform.position = Board.SquareNuberToWorldPosition(targetSquare);
+            attackEffect.transform.position = Board.SquareNumberToWorldPosition(targetSquare);
             attackEffect.Initialize();
         }
 

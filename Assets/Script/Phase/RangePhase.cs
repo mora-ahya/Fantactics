@@ -9,7 +9,7 @@ namespace FantacticsScripts
 
         [SerializeField] Board board = default;
         [SerializeField] GameObject directionUI = default;
-        [SerializeField] SquareTarget squareTarget = default;
+        [SerializeField] CameraTarget squareTarget = default;
 
         RangePhaseResult result;
 
@@ -28,20 +28,19 @@ namespace FantacticsScripts
             startSquare = player.Information.CurrentSquare;
             result.TargetSquare = startSquare;
             usedCardInformation = player.GetPlot();
-            squareTarget.Initialize(player.transform, MoveAim, EndMove);
-            UIManager.Instance.SwitchUI(PhaseEnum.RangePhase, true);
+            //squareTarget.Initialize(player.transform, MoveAim, EndMove);
+            UIManager.Instance.ShowPhaseUI(PhaseEnum.RangePhase, true);
         }
 
         public override PhaseResult GetResult()
         {
-            UIManager.Instance.SwitchUI(PhaseEnum.RangePhase, false);
+            UIManager.Instance.ShowPhaseUI(PhaseEnum.RangePhase, false);
             directionUI.SetActive(false);
             return result;
         }
 
         public override void Act()
         {
-            squareTarget.Act();
         }
 
         void EndMove()
@@ -58,7 +57,7 @@ namespace FantacticsScripts
                 return;
             }
 
-            int tmp = board.GetSquare(result.TargetSquare).GetAdjacentSquares(BoardDirection.Up + dir).Number;
+            int tmp = board.GetSquare(result.TargetSquare).GetAdjacentSquare(BoardDirection.Up + dir).Number;
 
             if (board.GetManhattanDistance(startSquare, tmp) > usedCardInformation.maxRange)
             {
@@ -79,7 +78,7 @@ namespace FantacticsScripts
                 return;
             }
             usedCardInformation = null;
-            manager.EndPhase(this);
+            manager.EndPhase(result);
             //player.EndTurn();
             Debug.Log("You attack this square!!");
         }

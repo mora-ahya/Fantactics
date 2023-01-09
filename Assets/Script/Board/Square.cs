@@ -25,17 +25,22 @@ namespace FantacticsScripts
             adjacentSquares[(int)BoardDirection.Left] = leftSquare;
         }
 
-        public Square GetAdjacentSquares(BoardDirection dir)
+        public Square GetAdjacentSquare(BoardDirection dir)
         {
             return adjacentSquares[(int)dir];
         }
 
-        public void PlayerEnter(int playerID)
+        public bool AddPlayer(int playerID)
         {
+            if (HavingPlayerID != -1)
+            {
+                return false;
+            }
             HavingPlayerID = playerID;
+            return true;
         }
 
-        public void PlayerExit()
+        public void RemovePlayer()
         {
             HavingPlayerID = -1;
         }

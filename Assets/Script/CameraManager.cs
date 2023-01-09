@@ -6,16 +6,23 @@ namespace FantacticsScripts
 {
     public class CameraManager : MonoBehaviour
     {
+        public enum CameraModeEnum
+        {
+            FreeMode,
+            FollowMode,
+            ShakeMode,
+        }
+
         public static CameraManager Instance { get; private set; }
 
         readonly Vector2 yRange = new Vector2(12.5f, 60f);
         readonly float minXRange = 0f;
         readonly float minZRange = -11f;
 
-        public GameObject Target { get; private set; } = null;
+        public CameraTarget cameraTarget { get; private set; } = null;
         Vector3 positoinTmp = new Vector3();
         Vector3 prePosition = new Vector3();
-        Vector3 offset = new Vector3(0, 11.5f, -11.5f);
+        Vector3 posOffset = new Vector3(0, 20.0f, -20.0f);
         System.Action mode;
 
         void Awake()
@@ -27,23 +34,33 @@ namespace FantacticsScripts
         public void SetPosition(int squareNumber)
         {
             positoinTmp.Set(Square.Side * (squareNumber % Board.Width), 0, Square.Side * (squareNumber / Board.Width));
-            positoinTmp += offset;
+            positoinTmp += posOffset;
             transform.position = positoinTmp;
         }
 
-        public void SetPosition(Transform trans)
+        public void SetPosition(Vector3 setPos)
         {
-            transform.position = trans.position + offset;
+            transform.position = setPos + posOffset;
         }
 
         public void SetOffset(float x, float y, float z)
         {
-            offset.Set(x, y, z);
+            posOffset.Set(x, y, z);
+            if (cameraTarget)
+            {
+                transform.position = cameraTarget.transform.position + posOffset;
+                transform.LookAt(cameraTarget.transform);
+            }
         }
 
-        public void SetTarget(GameObject t)
+        public void SetTarget(CameraTarget target)
         {
-            Target = t;
+            cameraTarget = target;
+            if (cameraTarget)
+            {
+                transform.position = cameraTarget.transform.position + posOffset;
+                transform.LookAt(cameraTarget.transform);
+            }
         }
 
         public void Act()
@@ -57,11 +74,11 @@ namespace FantacticsScripts
 
             if (Input.mouseScrollDelta.y != 0)//まだ未完成
             {
-                positoinTmp.y -= offset.normalized.y * Input.mouseScrollDelta.y;
+                positoinTmp.y -= posOffset.normalized.y * Input.mouseScrollDelta.y;
 
                 if (positoinTmp.y >= yRange.x && positoinTmp.y <= yRange.y)
                 {
-                    positoinTmp.z -= offset.normalized.z * Input.mouseScrollDelta.y;
+                    positoinTmp.z -= posOffset.normalized.z * Input.mouseScrollDelta.y;
                     positoinTmp.z = Mathf.Clamp(positoinTmp.z, minZRange, Board.Height * Square.Side + minZRange);
                 }
                 positoinTmp.y = Mathf.Clamp(positoinTmp.y, yRange.x, yRange.y);
@@ -88,10 +105,10 @@ namespace FantacticsScripts
 
         void FollowMode()
         {
-            if (Target == null)
+            if (cameraTarget == null)
                 return;
 
-            transform.position = Target.transform.position + offset;
+            transform.position = cameraTarget.transform.position + posOffset;
         }
 
         public void Test(bool b)
@@ -108,14 +125,14 @@ namespace FantacticsScripts
 
         void ShakeMode()
         {
-            if (Target == null)
+            if (cameraTarget == null)
                 return;
 
             float difX = Random.Range(-1.0f, 1.0f);
             float difY = Random.Range(-1.0f, 1.0f);
             positoinTmp.Set(difX, difY, 0.0f);
 
-            transform.position = Target.transform.position + offset + positoinTmp;
+            transform.position = cameraTarget.transform.position + posOffset + positoinTmp;
         }
 
         public void ChangeMode()
@@ -128,6 +145,23 @@ namespace FantacticsScripts
             {
                 mode = FollowMode;
             }
+        }
+
+        public void SetMode(CameraModeEnum modeEnum)
+        {
+            switch (modeEnum)
+            {
+                case CameraModeEnum.FreeMode:
+                    mode = FreeMode;
+                    break;
+
+                case CameraModeEnum.FollowMode:
+                    mode = FollowMode;
+                    break;
+
+                case CameraModeEnum.ShakeMode:
+                    break;
+            } 
         }
 
         float CalculateXAxisOfMinReachableRange(float y)

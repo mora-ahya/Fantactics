@@ -12,30 +12,30 @@ namespace FantacticsScripts
         System.Action process;
 
         [SerializeField] Board board = default;
-        [SerializeField] PhaseNotice phaseNotice = default;
         [SerializeField] PhaseManager phaseManager = default;
         [SerializeField] Player[] players = default;
         [SerializeField] FieldAnimation fieldAnimation = default;
+
         int currentPlayerID;
         int[] actionOrder;//playersのインデックスを行動順に並べる
         int turn;
         int maxPlayer = 1;
-        PhaseEnum currentPhaseEnum;
-        Phase currentPhase;
 
         void Start()
         {
             board.Initialize();
-            board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquares(BoardDirection.Right).Number, true);
+            board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquare(BoardDirection.Right).Number, true);
             board.ApplayRedBitFlag();
             actionOrder = new int[6] { 0, 1, 2, 3, 4, 5 };
+
             players[0].Initialize(new PlayerInformation(new TestCharacter()));
-            DrawCards();
-            currentPhaseEnum = PhaseEnum.PlottingPhase;
-            currentPhase = phaseManager.GetPhase(currentPhaseEnum);
+            players[0].DrawCards(10);
+
             phaseManager.Initialize(this, players[0]);
-            currentPhase.Initialize();
-            phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
+
+            // フェーズの設定
+            StartPhase(PhaseEnum.MovePhase);
+
             //players[0].StartTurn(phases[(int)currentPhase]);
         }
 
@@ -49,14 +49,13 @@ namespace FantacticsScripts
         {
             CameraManager.Instance.Act();
             CardOperation.Instance.Act();
+
             process?.Invoke();
-            if (phaseNotice.IsActing)
-                phaseNotice.Act();
         }
 
         void PhaseProcess()
         {
-            currentPhase?.Act();
+            phaseManager.ActPhase();
         }
 
         void AnimationProcess()
@@ -65,8 +64,15 @@ namespace FantacticsScripts
             if (fieldAnimation.IsEnd())
             {
                 process = null;
-                TransitionToTheNextTurn();
+                TransitionToNextTurn();
             }
+        }
+
+        void StartPhase(PhaseEnum phaseEnum)
+        {
+            phaseManager.StartPhase(phaseEnum);
+            UIManager.Instance.DisplayPhaseNotice(phaseEnum);
+            process = PhaseProcess;
         }
 
         public void SetCharacter(int charaNum)
@@ -74,62 +80,26 @@ namespace FantacticsScripts
 
         }
 
-        public override void NotifyPhaseEnd(PhaseResult result)
+        public void OnDecidedPlayerPlotting()
         {
-            Player playerTmp = players[currentPlayerID];
-            currentPhase = null;
-            //switch (currentPhaseEnum)
-            //{
-            //    case PhaseEnum.PlottingPhase:
-            //        for (int i = 0; i < maxPlayer - 1; i++)
-            //        {
-            //            //autoPlayerがプロットを決める
-            //        }
-            //        DecideActionOrder();
-            //        AllocateTurnToPlayer();
-            //        break;
-
-            //    case PhaseEnum.MovePhase:
-            //        fieldAnimation.SetMoveAnimation(playerTmp, result[1], 2, result);
-            //        //プレイヤーによってマス位置を変える(向き次第)
-            //        board.GetSquare(playerTmp.Information.CurrentSquare).PlayerExit();
-            //        playerTmp.Information.SetCurrentSquare(result[4]);
-            //        board.GetSquare(result[4]).PlayerEnter(currentPlayerID);
-            //        process = AnimationProcess;
-            //        break;
-
-            //    case PhaseEnum.RangePhase:
-            //        //battleAnimation;
-            //        CalculateRangeDamage(result[1]);
-            //        process = AnimationProcess;
-            //        break;
-
-            //    case PhaseEnum.MeleePhase:
-            //        process = AnimationProcess;
-            //        break;
-            //}
-
-            //void CalculateRangeDamage(int targetSquare)
-            //{
-            //    CardInfomation cardTmp = playerTmp.GetPlot();
-            //    int dis = 0;
-            //    foreach(Player p in players)
-            //    {
-            //        dis = board.GetManhattanDistance(targetSquare, p.Information.CurrentSquare);
-            //        if (dis > cardTmp.Blast)
-            //        {
-            //            continue;
-            //        }
-            //        //そのプレイヤーのダメージフラグを立てて、ダメージを保存
-            //    }
-            //}
+            //AutoPlayerのPlotを決める (もしくは別スレッドの完了を待つ)
+            phaseManager.EndCurrentPhase();
+            CurrentSegment = 0;
+            turn = 0;
+            DecideActionOrder(CurrentSegment);
+            AllocateTurn();
         }
 
-        void TransitionToTheNextTurn()
+        public void OnCompletedPlayerTurn()
+        {
+
+        }
+
+        void TransitionToNextTurn()
         {
             if (turn != maxPlayer - 1)
             {
-                AllocateTurnToPlayer();
+                AllocateTurn();
                 return;
             }
 
@@ -138,23 +108,17 @@ namespace FantacticsScripts
             if (CurrentSegment == 2)
             {
                 CurrentSegment = 0;
-                ThrowAwayHands();
-                DrawCards();
-                currentPhaseEnum = PhaseEnum.PlottingPhase;
-                currentPhase = phaseManager.GetPhase(currentPhaseEnum);
-                currentPhase.Initialize();
-                //players[0].StartTurn(phases[(int)currentPhase]);
-                phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
+                StartPlottingPhase();
                 return;
             }
-            DecideActionOrder();
-            AllocateTurnToPlayer();
+            DecideActionOrder(CurrentSegment);
+            AllocateTurn();
         }
 
         /// <summary>
         /// カード情報から行動順を決定する
         /// </summary>
-        void DecideActionOrder()
+        void DecideActionOrder(int segmentNum)
         {
             int tmp;
             int j;
@@ -162,7 +126,7 @@ namespace FantacticsScripts
             {
                 tmp = actionOrder[i];
                 j = i;
-                for (; j > 0 && JudgeOrder(actionOrder[j - 1], tmp); j--)
+                for (; j > 0 && JudgeOrder(actionOrder[j - 1], tmp, segmentNum); j--)
                 {
                     actionOrder[j] = actionOrder[j - 1];
                 }
@@ -177,11 +141,12 @@ namespace FantacticsScripts
         /// </summary>
         /// <param name="playerID1"></param>
         /// <param name="playerID2"></param>
+        /// <param name="segmentNum"></param>
         /// <returns></returns>
-        bool JudgeOrder(int playerID1, int playerID2)
+        bool JudgeOrder(int playerID1, int playerID2, int segmentNum)
         {
-            CardInfomation c1 = players[playerID1].Information.GetPlot(CurrentSegment);
-            CardInfomation c2 = players[playerID2].Information.GetPlot(CurrentSegment);
+            CardInfomation c1 = players[playerID1].Information.GetPlot(segmentNum);
+            CardInfomation c2 = players[playerID2].Information.GetPlot(segmentNum);
             Character chara1 = players[playerID1].Information.Chara;
             Character chara2 = players[playerID2].Information.Chara;
 
@@ -192,18 +157,20 @@ namespace FantacticsScripts
         /// <summary>
         /// actionOrderに従って、プレイヤーにターンを割り振る
         /// </summary>
-        void AllocateTurnToPlayer()
+        void AllocateTurn()
         {
             currentPlayerID = actionOrder[turn];
             PhaseEnum p = ChangeCardTypeToPhase(players[currentPlayerID].Information.GetPlot(CurrentSegment).Type);
+            PhaseEnum currentPhaseEnum = phaseManager.GetCurrentPhaseEnum();
             if (currentPhaseEnum != p)
             {
                 currentPhaseEnum = p;
-                phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
+                UIManager.Instance.DisplayPhaseNotice(currentPhaseEnum);
             }
 
             if (currentPlayerID == 0)
             {
+                Phase currentPhase = phaseManager.GetCurrentPhase();
                 //players[0].StartTurn(phases[(int)currentPhase]);
                 currentPhase = phaseManager.GetPhase(currentPhaseEnum);
                 currentPhase.Initialize();
@@ -212,6 +179,15 @@ namespace FantacticsScripts
             {
                 //autoPlayers[currentPlayerID]の行動
             }
+        }
+
+        void StartPlottingPhase()
+        {
+            players[0].ThrowAwayHands();
+            players[0].DrawCards(10);
+            phaseManager.StartPhase(PhaseEnum.PlottingPhase);
+            UIManager.Instance.DisplayPhaseNotice(PhaseEnum.PlottingPhase);
+            // 手札を捨てる、ドローのアニメーション起動
         }
 
         /// <summary>
@@ -237,47 +213,6 @@ namespace FantacticsScripts
             }
         }
 
-        
-        /// <summary>
-        /// 山札から規定数のカードを手札に加える(ランダム)
-        /// </summary>
-        void DrawCards()
-        {
-            int i;
-            int count = 0;
-            while (count != players[0].Information.Chara.Imagination)
-            {
-                if (players[0].Information.Deck == 0)
-                    ReturnDeckFromDiscards();
-
-                i = BitCalculation.GetNthBit(players[0].Information.Deck, Random.Range(0, BitCalculation.BitCount(players[0].Information.Deck)));
-                players[0].Information.Deck &= ~i;
-                players[0].Information.Hands |= i;
-                CardOperation.Instance.SetCardInfo(count, players[0].Information.Chara.GetCard(BitCalculation.CheckWhichBitIsOn(i)));
-                count++;
-            }
-            CardOperation.Instance.NumberOfHands = count;
-            Debug.Log("山札：" + System.Convert.ToString(players[0].Information.Deck, 2));
-            Debug.Log("手札：" + System.Convert.ToString(players[0].Information.Hands, 2));
-        }
-
-        /// <summary>
-        /// 捨て札をすべて山札に戻す
-        /// </summary>
-        void ReturnDeckFromDiscards()
-        {
-            players[0].Information.Deck = players[0].Information.Discards;
-            players[0].Information.Deck = players[0].Information.Discards = 0;
-        }
-
-        /// <summary>
-        /// 手札を捨てる
-        /// </summary>
-        void ThrowAwayHands()
-        {
-            players[0].Information.Deck = players[0].Information.Discards |= players[0].Information.Deck = players[0].Information.Hands;
-            players[0].Information.Hands = 0;
-        }
         /*
         /// <summary>
         /// 山札からランダムなカードを除外する

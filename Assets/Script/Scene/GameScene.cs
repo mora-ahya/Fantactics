@@ -8,7 +8,7 @@ namespace FantacticsScripts
     {
         public int CurrentSegment { get; protected set; }
 
-        public virtual void NotifyPhaseEnd(PhaseResult result)
+        public virtual void NotifyPhaseEnd(int phaseEnum)
         {
             
         }

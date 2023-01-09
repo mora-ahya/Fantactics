@@ -67,7 +67,7 @@ namespace FantacticsScripts
             }
             deck = (1 << character.Hp) - 1;
             currentSquare = 5;
-            board.GetSquare(currentSquare).PlayerEnter(Team);
+            board.GetSquare(currentSquare).AddPlayer(Team);
             transform.position = new Vector3(currentSquare % Board.Width + 0.5f, 0, currentSquare / Board.Width + 0.5f) * Square.Side;
             transform.position += Vector3.up;
             client = new Client();
@@ -104,7 +104,7 @@ namespace FantacticsScripts
                 case PhaseEnum.MovePhase:
                     process = MovePhaseProcess;
                     directionUI.SetActive(true);
-                    board.GetSquare(currentSquare).PlayerExit();
+                    board.GetSquare(currentSquare).RemovePlayer();
                     break;
 
                 case PhaseEnum.RangePhase:
@@ -116,7 +116,7 @@ namespace FantacticsScripts
                     process = RangePhaseProcess;
                     break;
             }
-            uiManager.SwitchUI(p, true);
+            uiManager.ShowPhaseUI(p, true);
         }
 
         /// <summary>
@@ -242,7 +242,7 @@ namespace FantacticsScripts
             if (actions[0] == null || actions[1] == null)
                 return;
 
-            uiManager.SwitchUI(PhaseEnum.PlottingPhase, false);
+            uiManager.ShowPhaseUI(PhaseEnum.PlottingPhase, false);
             byte[] tmp = {(byte)PlayerID,(byte)actions[0].CardInfo.ID, (byte)actions[1].CardInfo.ID };
             client.StartSend(tmp);
         }
@@ -264,7 +264,7 @@ namespace FantacticsScripts
                 Debug.Log("Nothing Square!");
                 return;
             }
-            int nextSquare = board.GetSquare(currentSquare).GetAdjacentSquares(BoardDirection.Up + dir).Number;
+            int nextSquare = board.GetSquare(currentSquare).GetAdjacentSquare(BoardDirection.Up + dir).Number;
 
             if (board.PlayerIsInSquare(nextSquare))
             {
@@ -294,7 +294,7 @@ namespace FantacticsScripts
             directionUI.SetActive(false);
             moveDirectionHistories[numberOfMoves] = BoardDirection.Up + dir;
             moveDirection = moveDirectionHistories[numberOfMoves];
-            currentSquare = board.GetSquare(currentSquare).GetAdjacentSquares(BoardDirection.Up + dir).Number;
+            currentSquare = board.GetSquare(currentSquare).GetAdjacentSquare(BoardDirection.Up + dir).Number;
             numberOfMoves++;
             mobility -= board.GetSquare(nextSquare).ConsumptionOfMobility;
             IsDuringTheMove = true;
@@ -302,7 +302,7 @@ namespace FantacticsScripts
 
         public void SetMoveAmount()
         {
-            cameraManager.SetPosition(transform);
+            cameraManager.SetPosition(transform.position);
             mobility = 4;
             numberOfMoves = 0;
             Debug.Log("You Got 4 Mobilities!");
@@ -328,8 +328,8 @@ namespace FantacticsScripts
             }
             client.StartSend(tmp);
             directionUI.SetActive(false);
-            board.GetSquare(currentSquare).PlayerEnter(Team);
-            uiManager.SwitchUI(PhaseEnum.MovePhase, false);
+            board.GetSquare(currentSquare).AddPlayer(Team);
+            uiManager.ShowPhaseUI(PhaseEnum.MovePhase, false);
             numberOfMoves = 0;
             mobility = 0;
             process = null;
@@ -346,7 +346,7 @@ namespace FantacticsScripts
                 if (moveDirectionHistories[numberOfMoves - 1] == BoardDirection.Up + i)
                     continue;
 
-                adjacentSquareNumber = board.GetSquare(currentSquare).GetAdjacentSquares(BoardDirection.Up + i).Number;
+                adjacentSquareNumber = board.GetSquare(currentSquare).GetAdjacentSquare(BoardDirection.Up + i).Number;
                 if (board.GetSquare(adjacentSquareNumber).ConsumptionOfMobility > mobility || board.PlayerIsInSquare(adjacentSquareNumber))
                     return false;
             }
@@ -368,7 +368,7 @@ namespace FantacticsScripts
             {
                 MoveBetweenSquares(transform, moveDirection, charaMoveSpeed);
             }
-            cameraManager.SetPosition(transform);
+            cameraManager.SetPosition(transform.position);
         }
 
         void MoveBetweenSquares(Transform t, BoardDirection dir, float amount)
@@ -421,7 +421,7 @@ namespace FantacticsScripts
                 return;
             }
 
-            int tmp = board.GetSquare(targetSquare).GetAdjacentSquares(BoardDirection.Up + n).Number;
+            int tmp = board.GetSquare(targetSquare).GetAdjacentSquare(BoardDirection.Up + n).Number;
 
             if (board.GetManhattanDistance(startSquare, tmp) > usedCardInformation.maxRange)
             {
@@ -442,8 +442,8 @@ namespace FantacticsScripts
                 return;
             }
 
-            cameraManager.SetPosition(transform);
-            uiManager.SwitchUI(PhaseEnum.RangePhase, false);
+            cameraManager.SetPosition(transform.position);
+            uiManager.ShowPhaseUI(PhaseEnum.RangePhase, false);
             usedCardInformation = null;
             process = null;
             Debug.Log("You attack this square!!");

@@ -48,9 +48,9 @@ namespace FantacticsScripts
             }
         }
 
-        public void SetMoveAnimation(Player player, int maxNumOfMoves, int offset, byte[] directions)
+        public void SetMoveAnimation(Player player, MovePhaseResult result)
         {
-            moveAnimation.SetAnimation(player, maxNumOfMoves, offset, directions);
+            moveAnimation.SetAnimation(player, result);
             func = MoveAnimationFunc;
         }
 
