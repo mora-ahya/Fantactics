@@ -13,9 +13,19 @@ namespace FantacticsScripts
 
         }
 
+        public virtual void End()
+        {
+
+        }
+
         public virtual PhaseResult GetResult()
         {
             return null;
+        }
+
+        public virtual PhaseEnum GetPhaseEnum()
+        {
+            return PhaseEnum.MeleePhase;
         }
 
         public virtual void Act()
