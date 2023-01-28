@@ -13,7 +13,7 @@ namespace FantacticsScripts
 
         [SerializeField] GameObject selectSegmentsPhaseUI = default;
 
-        readonly string RemainMovePowerStringFormat = "%02d";
+        readonly string RemainMovePowerStringFormat = "{0,2:00}";
         [SerializeField] GameObject movePhaseUI = default;
         [SerializeField] Text movePhaseUIRemainMove = default;
 
