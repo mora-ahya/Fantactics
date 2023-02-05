@@ -60,7 +60,7 @@ namespace FantacticsScripts
         public void SetAnimation(Player player, MovePhaseResult result)
         {
             movingObject = player.gameObject;
-            maxNumberOfMoves = result.NumOfMoves;
+            maxNumberOfMoves = result.NumOfMove;
             currentSquareNumber = player.Information.CurrentSquare;
             result.MoveDirections.CopyTo(moveDirections, 0);
             numberOfMoves = 0;

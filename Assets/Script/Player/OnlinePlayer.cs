@@ -259,14 +259,14 @@ namespace FantacticsScripts
             if (IsDuringTheMove)
                 return;
 
-            if (!board.CanMoveToDirection(currentSquare, BoardDirection.Up + dir))
+            if (!board.ExistsSquare(currentSquare, BoardDirection.Up + dir))
             {
                 Debug.Log("Nothing Square!");
                 return;
             }
             int nextSquare = board.GetSquare(currentSquare).GetAdjacentSquare(BoardDirection.Up + dir).Number;
 
-            if (board.PlayerIsInSquare(nextSquare))
+            if (board.CheckPlayerIsInSquare(nextSquare))
             {
                 Debug.Log("The square has already player!");
                 return;
@@ -347,7 +347,7 @@ namespace FantacticsScripts
                     continue;
 
                 adjacentSquareNumber = board.GetSquare(currentSquare).GetAdjacentSquare(BoardDirection.Up + i).Number;
-                if (board.GetSquare(adjacentSquareNumber).ConsumptionOfMobility > mobility || board.PlayerIsInSquare(adjacentSquareNumber))
+                if (board.GetSquare(adjacentSquareNumber).ConsumptionOfMobility > mobility || board.CheckPlayerIsInSquare(adjacentSquareNumber))
                     return false;
             }
 
@@ -415,7 +415,7 @@ namespace FantacticsScripts
 
         public void MoveAim(int n)
         {
-            if (!board.CanMoveToDirection(targetSquare, BoardDirection.Up + n))
+            if (!board.ExistsSquare(targetSquare, BoardDirection.Up + n))
             {
                 Debug.Log("Nothing Square!");
                 return;

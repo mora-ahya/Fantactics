@@ -24,8 +24,8 @@ namespace FantacticsScripts
         void Start()
         {
             board.Initialize();
-            board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquare(BoardDirection.Right).Number, true);
-            board.ApplayRedBitFlag();
+            //board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquare(BoardDirection.Right).Number, true);
+            //board.ApplayRedBitFlag();
             actionOrder = new int[6] { 0, 1, 2, 3, 4, 5 };
 
             players[0].Initialize(new PlayerInformation(new TestCharacter()));
@@ -33,8 +33,10 @@ namespace FantacticsScripts
 
             phaseManager.Initialize(this, players[0]);
 
+            GameSceneManager.Instance.SetGameScene(this);
+
             // フェーズの設定
-            StartPhase(PhaseEnum.MovePhase);
+            StartPhase(PhaseEnum.PlottingPhase);
 
             //players[0].StartTurn(phases[(int)currentPhase]);
         }
@@ -70,7 +72,7 @@ namespace FantacticsScripts
 
         void StartPhase(PhaseEnum phaseEnum)
         {
-            phaseManager.StartPhase(phaseEnum);
+            phaseManager.StartPhase(players[0], phaseEnum);
             UIManager.Instance.DisplayPhaseNotice(phaseEnum);
             process = PhaseProcess;
         }
@@ -80,14 +82,59 @@ namespace FantacticsScripts
 
         }
 
+        /// <summary>
+        /// プロットが決定したときに飛び出す関数
+        /// </summary>
         public void OnDecidedPlayerPlotting()
         {
             //AutoPlayerのPlotを決める (もしくは別スレッドの完了を待つ)
-            phaseManager.EndCurrentPhase();
             CurrentSegment = 0;
             turn = 0;
             DecideActionOrder(CurrentSegment);
             AllocateTurn();
+        }
+
+        /// <summary>
+        /// PlottingPhaseResultを受け取ったときの処理
+        /// </summary>
+        public override void OnReceivedPlottingPhaseResult(PlottingPhaseResult result)
+        {
+            Player player = players[result.PlayerID]; // 適切なプレイヤーをセットする。今は仮
+
+            player.SetPlot(0, result.Actions[0].CardInfo.ID);
+            player.SetPlot(1, result.Actions[1].CardInfo.ID);
+
+            // 本来はAutoPlayerのPlotを決める
+            OnDecidedPlayerPlotting();
+        }
+
+        /// <summary>
+        /// MovePhaseResultを受け取ったときの処理
+        /// </summary>
+        public override void OnReceivedMovePhaseResult(MovePhaseResult result)
+        {
+            Player player = players[result.PlayerID];
+
+            player.SetMoveAnimation(result);
+            board.AddPlayerIntoSquare(player, result.DestSquareNum);
+            StartCoroutine(WaitPlayerMoving(player, 1.0f));
+        }
+
+        IEnumerator WaitPlayerMoving(Player player, float adjustTime = 0.0f)
+        {
+            while(player.IsMoving)
+            {
+                yield return null;
+            }
+
+            float delta = 0.0f;
+
+            while (delta < adjustTime)
+            {
+                delta += Time.deltaTime;
+            }
+
+            TransitionToNextTurn();
         }
 
         public void OnCompletedPlayerTurn()
@@ -95,6 +142,9 @@ namespace FantacticsScripts
 
         }
 
+        /// <summary>
+        /// プレイヤーの行動が終了して、次のプレイヤーにターンを渡す関数
+        /// </summary>
         void TransitionToNextTurn()
         {
             if (turn != maxPlayer - 1)
@@ -170,10 +220,7 @@ namespace FantacticsScripts
 
             if (currentPlayerID == 0)
             {
-                Phase currentPhase = phaseManager.GetCurrentPhase();
-                //players[0].StartTurn(phases[(int)currentPhase]);
-                currentPhase = phaseManager.GetPhase(currentPhaseEnum);
-                currentPhase.Initialize();
+                phaseManager.StartPhase(players[0], currentPhaseEnum);
             }
             else
             {
@@ -185,7 +232,7 @@ namespace FantacticsScripts
         {
             players[0].ThrowAwayHands();
             players[0].DrawCards(10);
-            phaseManager.StartPhase(PhaseEnum.PlottingPhase);
+            phaseManager.StartPhase(players[0], PhaseEnum.PlottingPhase);
             UIManager.Instance.DisplayPhaseNotice(PhaseEnum.PlottingPhase);
             // 手札を捨てる、ドローのアニメーション起動
         }

@@ -26,7 +26,7 @@ namespace FantacticsScripts
         /// <summary>
         /// プロットフェーズの初期処理
         /// </summary>
-        public override void Initialize()
+        public override void Initialize(Player player)
         {
             result.Clear();
 
@@ -40,11 +40,23 @@ namespace FantacticsScripts
 
         public override void End()
         {
+            GameSceneManager.Instance.SendPlottingPhaseResult(result);
+
             CardOperation.Instance.OnMouseButtonLongPress -= mouseButtonLongPressEventHandler;
             CardOperation.Instance.OnMouseButtonDown -= mouseButtonDownEventHandler;
             CardOperation.Instance.OnMouseButtonUp -= mouseButtonUpEventHandler;
             UIManager.Instance.ShowPhaseUI(PhaseEnum.PlottingPhase, false);
             CardOperation.Instance.ResetHandsObjectsPosition();
+        }
+
+        public override bool CanEndPhase()
+        {
+            if (result.Actions[0] == null || result.Actions[1] == null)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public override PhaseResult GetResult()

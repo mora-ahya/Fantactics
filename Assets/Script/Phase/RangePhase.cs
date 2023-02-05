@@ -22,9 +22,8 @@ namespace FantacticsScripts
             result = new RangePhaseResult();
         }
 
-        public override void Initialize()
+        public override void Initialize(Player player)
         {
-            Player player = manager.GetSelfPlayer();
             startSquare = player.Information.CurrentSquare;
             result.TargetSquare = startSquare;
             usedCardInformation = player.GetPlot();
@@ -51,7 +50,7 @@ namespace FantacticsScripts
 
         public void MoveAim(int dir)
         {
-            if (!board.CanMoveToDirection(result.TargetSquare, BoardDirection.Up + dir))
+            if (!board.ExistsSquare(result.TargetSquare, BoardDirection.Up + dir))
             {
                 Debug.Log("Nothing Square!");
                 return;
@@ -78,7 +77,7 @@ namespace FantacticsScripts
                 return;
             }
             usedCardInformation = null;
-            manager.EndPhase(result);
+            //manager.EndPhase(result);
             //player.EndTurn();
             Debug.Log("You attack this square!!");
         }

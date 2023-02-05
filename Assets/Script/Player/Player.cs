@@ -11,10 +11,11 @@ namespace FantacticsScripts
         System.Action phase;
 
         public PlayerInformation Information { get; private set; }
-        Phase currentPhase;
+        public bool IsMoving { get { return mover.IsMoving; } }
         [SerializeField] Board board = default;
         [SerializeField] OfflineGameScene gameScene = default;
         [SerializeField] PhaseManager phaseManager = default;
+        [SerializeField] PlayerMover mover = default;
 
         public void Initialize(PlayerInformation pInfo)
         {
@@ -25,6 +26,7 @@ namespace FantacticsScripts
             Information.SetCurrentSquare(5);
             board.GetSquare(Information.CurrentSquare).AddPlayer(Information.PlayerID);
             transform.position = Board.SquareNumberToWorldPosition(Information.CurrentSquare);
+            mover.Initialize(this, board);
             //PlottingPhaseInit();
         }
 
@@ -32,6 +34,21 @@ namespace FantacticsScripts
         {
             //phase?.Invoke();
             
+        }
+
+        public void SetPlot(int plotNum, int cardId)
+        {
+            Information.SetPlot(plotNum, cardId);
+        }
+
+        public void SetMoveAnimation(MovePhaseResult movePhaseResult)
+        {
+            this.SetMoveAnimation(movePhaseResult.MoveDirections, movePhaseResult.NumOfMove, movePhaseResult.PlayerForward);
+        }
+
+        public void SetMoveAnimation(BoardDirection[] moveDirectionsSource, int numOfMove, BoardDirection lastDirection)
+        {
+            mover.SetAnimationForDirection(moveDirectionsSource, numOfMove, lastDirection);
         }
 
         public void StorePlottingPhaseResult()
@@ -56,8 +73,8 @@ namespace FantacticsScripts
             //fieldAnimation.SetMoveAnimation(this, result);
             //プレイヤーによってマス位置を変える(向き次第)
             board.GetSquare(Information.CurrentSquare).RemovePlayer();
-            Information.SetCurrentSquare(result.DestSquare);
-            board.GetSquare(result.DestSquare).AddPlayer(Information.PlayerID);
+            Information.SetCurrentSquare(result.DestSquareNum);
+            board.GetSquare(result.DestSquareNum).AddPlayer(Information.PlayerID);
             //process = AnimationProcess;
         }
 

@@ -38,7 +38,7 @@ namespace FantacticsScripts
             currentPhaseEnum = PhaseEnum.PlottingPhase;
             currentPhase = phaseManager.GetPhase(currentPhaseEnum);
             phaseManager.Initialize(this, players[0]);
-            currentPhase.Initialize();
+            currentPhase.Initialize(players[0]);
             phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
             //players[0].StartTurn(phases[(int)currentPhase]);
         }
@@ -128,7 +128,7 @@ namespace FantacticsScripts
                 {
                     //players[selfPlayerID].StartTurn(phases[(int)currentPhase]);
                     currentPhase = phaseManager.GetPhase(currentPhaseEnum);
-                    currentPhase.Initialize();
+                    currentPhase.Initialize(players[0]);
                 }
                 else
                 {
@@ -191,7 +191,7 @@ namespace FantacticsScripts
                     DrawCards();
                     currentPhaseEnum = PhaseEnum.PlottingPhase;
                     currentPhase = phaseManager.GetPhase(currentPhaseEnum);
-                    currentPhase.Initialize();
+                    currentPhase.Initialize(players[0]);
                     phaseNotice.DisplayPhaseNotice(currentPhaseEnum);
                     return;
                 }
@@ -265,7 +265,7 @@ namespace FantacticsScripts
             {
                 //players[0].StartTurn(phases[(int)currentPhase]);
                 currentPhase = phaseManager.GetPhase(currentPhaseEnum);
-                currentPhase.Initialize();
+                currentPhase.Initialize(players[0]);
             }
             else
             {

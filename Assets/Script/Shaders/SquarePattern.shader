@@ -48,6 +48,7 @@
             }
 
             sampler2D _MainTex;
+            sampler2D _RedBitFlags; // いずれテクスチャフラグにする予定だが、場合によってはこの方式自体を変更するかも
 			int _BoardHeight;
 			int _BoardWidth;
 			float _RedBitFlag[5];
@@ -63,7 +64,7 @@
 				float tmp4 = pow(2.0, tmp3 - (32 * (tmp3 >> 5)));
 				fixed4 color = tex2D(_MainTex, i.uv) * SHADOW_ATTENUATION(i);
 				float tmp5 = (abs(tmp - 0.5) < time && abs(tmp2 - 0.5) < time) ? time : 0.5;
-				color.rgb += abs((_RedBitFlag[tmp3 >> 5] / tmp4)) % 2 == 1 ? (fixed3(1, 0, 0) - color.rgb) * tmp5 : 0;
+				color.rgb += abs((floor(_RedBitFlag[tmp3 >> 5] / tmp4))) % 2 == 1 ? (fixed3(1, 0, 0) - color.rgb) * tmp5 : 0;
 
 				return tmp < LineWidth * 0.5 || (1.0 - tmp) < LineWidth * 0.5 || tmp2 < LineWidth * 0.5 || (1.0 - tmp2) < LineWidth * 0.5 ? 0.5 : color;
             }

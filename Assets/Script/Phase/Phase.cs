@@ -8,7 +8,7 @@ namespace FantacticsScripts
     {
         [SerializeField] protected PhaseManager manager = default;
 
-        public virtual void Initialize()
+        public virtual void Initialize(Player player)
         {
 
         }
@@ -16,6 +16,11 @@ namespace FantacticsScripts
         public virtual void End()
         {
 
+        }
+
+        public virtual bool CanEndPhase()
+        {
+            return false;
         }
 
         public virtual PhaseResult GetResult()

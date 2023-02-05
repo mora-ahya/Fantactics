@@ -12,5 +12,21 @@ namespace FantacticsScripts
         {
             
         }
+
+        /// <summary>
+        /// PlottingPhaseResultを受け取ったときの処理
+        /// </summary>
+        public virtual void OnReceivedPlottingPhaseResult(PlottingPhaseResult result)
+        {
+
+        }
+
+        /// <summary>
+        /// MovePhaseResultを受け取ったときの処理
+        /// </summary>
+        public virtual void OnReceivedMovePhaseResult(MovePhaseResult result)
+        {
+
+        }
     }
 }

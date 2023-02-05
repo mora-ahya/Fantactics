@@ -64,33 +64,35 @@ namespace FantacticsScripts
             return currentPhase.GetResult();
         }
 
-        public void StartPhase(PhaseEnum phaseEnum)
+        public void StartPhase(Player player, PhaseEnum phaseEnum)
         {
             currentPhase = phases[(int)phaseEnum];
-            currentPhase.Initialize();
+            currentPhase.Initialize(player);
         }
 
         public void EndCurrentPhase()
         {
-            currentPhase.End();
+            if (currentPhase.CanEndPhase())
+            {
+                currentPhase.End();
+            }
         }
 
-        public void EndPhase(PhaseResult phaseResult)
+        public void EndPhase(int phaseNum)
         {
-            switch (phaseResult.PhaseNumber)
+            if (phaseNum < 0 || phaseNum > phases.Length)
             {
-                case PhaseEnum.PlottingPhase:
-                    break;
-
-                case PhaseEnum.MovePhase:
-                    break;
-
-                case PhaseEnum.RangePhase:
-                    break;
-
-                case PhaseEnum.MeleePhase:
-                    break;
+                return;
             }
+
+            Phase phase = phases[phaseNum];
+
+            if (phase.CanEndPhase() == false)
+            {
+                return;
+            }
+
+            phase.End();
         }
     }
 }

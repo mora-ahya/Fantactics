@@ -7,6 +7,9 @@ namespace FantacticsScripts
     {
         public PhaseEnum PhaseNumber { get; protected set; }
 
+        // ÉvÉåÉCÉÑÅ[ÇéØï Ç≈Ç´ÇÈâΩÇ© int?
+        public int PlayerID;
+
         protected PhaseResult()
         {
 
@@ -14,7 +17,7 @@ namespace FantacticsScripts
 
         public virtual void Clear()
         {
-
+            PlayerID = 0;
         }
     }
 
@@ -29,6 +32,7 @@ namespace FantacticsScripts
 
         public override void Clear()
         {
+            base.Clear();
             Actions[0] = null;
             Actions[1] = null;
         }
@@ -38,8 +42,9 @@ namespace FantacticsScripts
     {
         public readonly BoardDirection[] MoveDirections = new BoardDirection[8];
 
-        public int NumOfMoves = 0;
-        public int DestSquare = 0;
+        public BoardDirection PlayerForward;
+        public int NumOfMove = 0;
+        public int DestSquareNum = 0;
 
         public MovePhaseResult()
         {
@@ -48,8 +53,18 @@ namespace FantacticsScripts
 
         public override void Clear()
         {
-            NumOfMoves = 0;
-            DestSquare = 0;
+            base.Clear();
+            NumOfMove = 0;
+            DestSquareNum = 0;
+            PlayerForward = BoardDirection.Up;
+        }
+
+        public void Copy(MovePhaseResult source)
+        {
+            source.MoveDirections.CopyTo(this.MoveDirections, 0);
+            this.NumOfMove = source.NumOfMove;
+            this.DestSquareNum = source.DestSquareNum;
+            this.PlayerForward = source.PlayerForward;
         }
     }
 
@@ -64,6 +79,7 @@ namespace FantacticsScripts
 
         public override void Clear()
         {
+            base.Clear();
             TargetSquare = 0;
         }
     }

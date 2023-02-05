@@ -173,7 +173,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1593,7 +1593,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2364,7 +2364,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &596926204
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2429,9 +2429,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1537501474}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: DecideDestination
+      - m_Target: {fileID: 1537501476}
+        m_TargetAssemblyTypeName: FantacticsScripts.PhaseManager, Assembly-CSharp
+        m_MethodName: EndCurrentPhase
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -3128,10 +3128,10 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1150152494}
-        m_TargetAssemblyTypeName: FantacticsScripts.Player, Assembly-CSharp
-        m_MethodName: StorePlottingPhaseResult
-        m_Mode: 1
+      - m_Target: {fileID: 1537501476}
+        m_TargetAssemblyTypeName: FantacticsScripts.PhaseManager, Assembly-CSharp
+        m_MethodName: EndPhase
+        m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -4427,6 +4427,7 @@ GameObject:
   - component: {fileID: 911847767}
   - component: {fileID: 911847766}
   - component: {fileID: 911847768}
+  - component: {fileID: 911847769}
   m_Layer: 0
   m_Name: GameScene
   m_TagString: Untagged
@@ -4490,6 +4491,18 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   fieldAnimation: {fileID: 0}
+--- !u!114 &911847769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 911847765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3bbcdcd64731ec49bfe0c25a26758d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &912420208
 GameObject:
   m_ObjectHideFlags: 0
@@ -5153,6 +5166,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1150152492}
   - component: {fileID: 1150152494}
+  - component: {fileID: 1150152495}
   - component: {fileID: 1150152493}
   m_Layer: 0
   m_Name: Player
@@ -5203,6 +5217,19 @@ MonoBehaviour:
   board: {fileID: 1370277952}
   gameScene: {fileID: 911847768}
   phaseManager: {fileID: 1537501476}
+  mover: {fileID: 1150152495}
+--- !u!114 &1150152495
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1150152491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ccc1473796dcfe4d820761dd97e0b57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1162553162
 GameObject:
   m_ObjectHideFlags: 0
@@ -6059,6 +6086,7 @@ MonoBehaviour:
   manager: {fileID: 1537501476}
   board: {fileID: 1370277952}
   cameraTarget: {fileID: 127884330}
+  decideButton: {fileID: 596926203}
 --- !u!114 &1537501475
 MonoBehaviour:
   m_ObjectHideFlags: 0

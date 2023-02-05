@@ -23,11 +23,12 @@ namespace FantacticsScripts
         {
             public override void Process(Transform transform, ref MovePack movePack)
             {
-                transform.position = Mathf.Pow(1f - movePack.moveAmountBetweenSquares, 2) * movePack.nextPosition;
-                transform.position += 2f * (1f - movePack.moveAmountBetweenSquares) * movePack.moveAmountBetweenSquares * movePack.center;
-                transform.position += Mathf.Pow(movePack.moveAmountBetweenSquares, 2) * movePack.nextPosition;
+                transform.position = Mathf.Pow(1.0f - movePack.moveAmountBetweenSquares, 2.0f) * movePack.currentPosition;
+                transform.position += 2.0f * (1.0f - movePack.moveAmountBetweenSquares) * movePack.moveAmountBetweenSquares * movePack.center;
+                transform.position += Mathf.Pow(movePack.moveAmountBetweenSquares, 2.0f) * movePack.nextPosition;
 
-                transform.LookAt((movePack.center - movePack.nextPosition) * (1f - movePack.moveAmountBetweenSquares) + (movePack.nextPosition - movePack.nextPosition) * movePack.moveAmountBetweenSquares);
+                Vector3 tmp = (movePack.center - movePack.currentPosition) * (1.0f - movePack.moveAmountBetweenSquares) + (movePack.nextPosition - movePack.currentPosition) * movePack.moveAmountBetweenSquares;
+                transform.forward = (movePack.center - movePack.currentPosition) * (1.0f - movePack.moveAmountBetweenSquares) + (movePack.nextPosition - movePack.center) * movePack.moveAmountBetweenSquares;
             }
         }
 
@@ -51,7 +52,7 @@ namespace FantacticsScripts
             new Turn(),
         };
 
-        public bool IsRunning { get; private set; }
+        public bool IsMoving { get; private set; }
 
         readonly protected BoardDirection[] moveDirections = new BoardDirection[8];
         
@@ -76,46 +77,47 @@ namespace FantacticsScripts
             
         }
 
-        public bool SetAnimation(MovePhaseResult result)
+        public bool SetAnimationForDirection(BoardDirection[] moveDirectionsSource, int numOfMove, BoardDirection lastDirection)
         {
-            if (IsRunning)
+            if (IsMoving)
             {
                 return false;
             }
 
-            result.MoveDirections.CopyTo(moveDirections, 0);
-            IsRunning = true;
-            StartCoroutine(MoveFollowingDirections(result.NumOfMoves, result.LastDirection));
+            moveDirectionsSource.CopyTo(moveDirections, 0);
+            IsMoving = true;
+            StartCoroutine(MoveFollowingDirections(player.Information.CurrentSquare, numOfMove, lastDirection));
             //CameraManager.Instance.SetTarget(movingObject);
             return true;
         }
 
-        IEnumerator MoveFollowingDirections(int numOfMove, BoardDirection lastDirection)
+        IEnumerator MoveFollowingDirections(int firstSquareNum, int numOfMove, BoardDirection lastDirection)
         {
-            float moveSpeed;
+            float moveDelta;
+            float speedRate = 1.0f;
             MovePack movePack = new MovePack();
-            int nextSquareNum = player.Information.CurrentSquare;
+            movePack.currentPosition = Board.SquareNumberToWorldPosition(firstSquareNum);
+            int nextSquareNum = firstSquareNum;
             bool isContinue;
             Part part;
 
             if (numOfMove != 0)
             {
-                player.transform.LookAt(Board.GetVectorByDirection(moveDirections[0]));
+                player.transform.forward = (Board.GetVectorByDirection(moveDirections[0]));
             }
 
-            for (int i = 0; i < numOfMove; i++)
+            for (int i = -1; i < numOfMove; i++)
             {
-                nextSquareNum = board.GetSquare(nextSquareNum).GetAdjacentSquare(moveDirections[i]).Number;
-                part = CalculateNextMove(i, nextSquareNum, ref movePack);
-
+                part = CalculateNextMove(i, numOfMove, ref speedRate, ref nextSquareNum, ref movePack);
+                
                 movePack.moveAmountBetweenSquares = 0.0f;
                 isContinue = true;
                 // アニメーションステートの変更
 
                 while (isContinue)
                 {
-                    moveSpeed = characterMoveSpeed * Time.deltaTime;
-                    movePack.moveAmountBetweenSquares += moveSpeed;
+                    moveDelta = characterMoveSpeed * speedRate * Time.deltaTime;
+                    movePack.moveAmountBetweenSquares += moveDelta;
 
                     if (movePack.moveAmountBetweenSquares >= 1.0f)
                     {
@@ -127,35 +129,48 @@ namespace FantacticsScripts
                     part.Process(player.transform, ref movePack);
                     yield return null;
                 }
+
+                movePack.currentPosition = movePack.nextPosition;
             }
 
-            IsRunning = false;
-            player.transform.LookAt(Board.GetVectorByDirection(lastDirection));
+            IsMoving = false;
+            player.transform.forward = Board.GetVectorByDirection(lastDirection);
         }
 
-        Part CalculateNextMove(int moveNum, int nextSquareNum, ref MovePack movePack) // 移動方式を返す
+        Part CalculateAdjustMove(BoardDirection direction, int nextSquareNum, ref MovePack movePack)
         {
-            BoardDirection direction = moveDirections[moveNum];
+            // Boardの情報からアクションが必要か調べる nextSquareNumを使用 別変数にするかもしれない
+            movePack.nextPosition = movePack.currentPosition + Board.GetVectorByDirection(direction) * Square.Side / 2.0f;
+            return parts[(int)MoveType.GoStraight];
+        }
 
-            if (moveNum == 0 || moveNum == moveDirections.Length)
+        Part CalculateNextMove(int moveNum, int numOfMove, ref float speedRate, ref int nextSquareNum, ref MovePack movePack) // 移動方式を返す
+        {
+            BoardDirection direction = moveDirections[Mathf.Clamp(moveNum, 0, moveDirections.Length)];
+
+            if (moveNum == -1 || moveNum == numOfMove - 1)
             {
                 movePack.nextPosition = movePack.currentPosition + Board.GetVectorByDirection(direction) * Square.Side / 2.0f;
+                speedRate = 2.0f;
                 return parts[(int)MoveType.GoStraight];
             }
 
-            // Boardの情報からアクションが必要か調べる nextSquareNumを使用 別関数にするかもしれない
+            nextSquareNum = board.GetSquare(nextSquareNum).GetAdjacentSquare(direction).Number;
+            // Boardの情報からアクションが必要か調べる nextSquareNumを使用 別変数にするかもしれない
 
             BoardDirection nextDirection = moveDirections[moveNum + 1];
 
             if (direction == nextDirection)
             {
                 movePack.nextPosition = movePack.currentPosition + Board.GetVectorByDirection(direction) * Square.Side;
+                speedRate = 1.0f;
                 return parts[(int)MoveType.GoStraight];
             }
             else
             {
-                movePack.center = movePack.currentPosition + Board.GetVectorByDirection(nextDirection) * Square.Side / 2.0f;
-                movePack.nextPosition = movePack.center + Board.GetVectorByDirection(direction) * Square.Side / 2.0f;
+                movePack.center = movePack.currentPosition + Board.GetVectorByDirection(direction) * Square.Side / 2.0f;
+                movePack.nextPosition = movePack.center + Board.GetVectorByDirection(nextDirection) * Square.Side / 2.0f;
+                speedRate = 1.0f;
                 return parts[(int)MoveType.Turn];
             }
         }

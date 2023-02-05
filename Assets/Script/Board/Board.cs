@@ -15,7 +15,7 @@ namespace FantacticsScripts
 
         ///ボードのマスを赤くするときに使用
         ///赤くしたいマスの番目のbitを立てる
-        int[] redBitFlag = new int[((Width * Height) >> 5) + 1];
+        uint[] redBitFlag = new uint[((Width * Height) >> 5) + 1];
         float[] redBitFlagF = new float[((Width * Height) >> 5) + 1];
 
         public static Vector3 SquareNumberToWorldPosition(int squareNum)
@@ -86,19 +86,25 @@ namespace FantacticsScripts
             return squares[num];
         }
 
-        public bool CanMoveToDirection(int squareNum, BoardDirection dir)
+        public bool ExistsSquare(int squareNum, BoardDirection dir)
         {
             return squares[squareNum].GetAdjacentSquare(dir) != null;
         }
 
-        public bool PlayerIsInSquare(int squareNum)
+        public bool CheckPlayerIsInSquare(int squareNum)
         {
             return squares[squareNum].HavingPlayerID != -1;
         }
 
-        public bool PlayerIsInSquare(int squareNum, BoardDirection dir)
+        public bool CheckPlayerIsInSquare(int squareNum, BoardDirection dir)
         {
             return squares[squareNum].GetAdjacentSquare(dir).HavingPlayerID != -1;
+        }
+
+        public bool AddPlayerIntoSquare(Player player, int squareNum)
+        {
+            squares[player.Information.CurrentSquare].RemovePlayer();
+            return squares[squareNum].AddPlayer(player.Information.PlayerID);
         }
 
         public int GetManhattanDistance(int squareNum1, int squareNum2)
@@ -111,12 +117,12 @@ namespace FantacticsScripts
         {
             if (raise)
             {
-                redBitFlag[squareNum / 32] |= 1 << squareNum % 32;
+                redBitFlag[squareNum / 32] |= 1U << squareNum % 32;
                 redBitFlagF[squareNum / 32] = redBitFlag[squareNum / 32];
             }
             else
             {
-                redBitFlag[squareNum / 32] &= (redBitFlag[squareNum / 5] ^ (1 << squareNum % 32));
+                redBitFlag[squareNum / 32] &= (redBitFlag[squareNum / 5] ^ (1U << squareNum % 32));
                 redBitFlagF[squareNum / 32] = redBitFlag[squareNum / 32];
             }
         }
@@ -134,6 +140,29 @@ namespace FantacticsScripts
             for (int i = 0; i < 154; i++)
             {
                 squares[i].Test();
+            }
+        }
+
+        /// <summary>
+        /// すべてのSquareを赤くするテスト関数
+        /// </summary>
+        public void RedBitAllOnTest()
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                ChangeRedBitFlag(i, true);
+            }
+        }
+
+        /// <summary>
+        /// すべてのSquareを赤じゃなくするテスト関数
+        /// </summary>
+        public void RedBitAllOffTest()
+        {
+            for (int i = 0; i < redBitFlag.Length; i++)
+            {
+                redBitFlag[i] = ~0U;
+                redBitFlagF[i] = redBitFlag[i];
             }
         }
     }
