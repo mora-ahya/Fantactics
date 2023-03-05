@@ -28,5 +28,21 @@ namespace FantacticsScripts
         {
 
         }
+
+        /// <summary>
+        /// RangePhaseResultを受け取ったときの処理
+        /// </summary>
+        public virtual void OnReceivedRangePhaseResult(RangePhaseResult result)
+        {
+
+        }
+
+        /// <summary>
+        /// MeleePhaseResultを受け取ったときの処理
+        /// </summary>
+        public virtual void OnReceivedMeleePhaseResult(MeleePhaseResult result)
+        {
+
+        }
     }
 }

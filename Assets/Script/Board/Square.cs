@@ -68,11 +68,5 @@ namespace FantacticsScripts
         {
             Debug.Log(string.Format(testCase, test, adjacentSquares[0]?.test ?? -1, adjacentSquares[1]?.test ?? -1, adjacentSquares[2]?.test ?? -1, adjacentSquares[3]?.test ?? -1));
         }
-
-        public static int ManhattanDistance(Square square1, Square square2)
-        {
-            return Mathf.Abs(square1.Number / Board.Width - square2.Number / Board.Width)
-                + Mathf.Abs(square1.Number % Board.Width - square2.Number % Board.Width);
-        }
     }
 }

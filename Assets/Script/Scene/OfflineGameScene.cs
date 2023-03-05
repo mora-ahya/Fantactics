@@ -39,6 +39,7 @@ namespace FantacticsScripts
             StartPhase(PhaseEnum.PlottingPhase);
 
             //players[0].StartTurn(phases[(int)currentPhase]);
+            //RangePhase.ColorSquareInRangeTest(Board.Width * Board.Height / 2 + 5, 3, 5, BoardDirection.Left);
         }
 
         void Update()
@@ -117,9 +118,36 @@ namespace FantacticsScripts
 
             player.SetMoveAnimation(result);
             board.AddPlayerIntoSquare(player, result.DestSquareNum);
+            player.Information.SetCurrentSquare(result.DestSquareNum);
+            player.Information.Direction = result.PlayerForward;
             StartCoroutine(WaitPlayerMoving(player, 1.0f));
         }
 
+        /// <summary>
+        /// RangePhaseResultを受け取ったときの処理
+        /// </summary>
+        public override void OnReceivedRangePhaseResult(RangePhaseResult result)
+        {
+            Player player = players[result.PlayerID];
+
+            // Animationの設定
+            // ダメージ計算
+            StartCoroutine(WaitPlayerMoving(player, 1.0f));
+        }
+
+        /// <summary>
+        /// MeleePhaseResultを受け取ったときの処理
+        /// </summary>
+        public override void OnReceivedMeleePhaseResult(MeleePhaseResult result)
+        {
+            Player player = players[result.PlayerID];
+
+            // Animationの設定
+            // ダメージ計算
+            StartCoroutine(WaitPlayerMoving(player, 1.0f));
+        }
+
+        // いずれアニメーション一つにまとめる
         IEnumerator WaitPlayerMoving(Player player, float adjustTime = 0.0f)
         {
             while(player.IsMoving)
@@ -132,6 +160,7 @@ namespace FantacticsScripts
             while (delta < adjustTime)
             {
                 delta += Time.deltaTime;
+                yield return null;
             }
 
             TransitionToNextTurn();

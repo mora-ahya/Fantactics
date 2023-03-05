@@ -83,4 +83,20 @@ namespace FantacticsScripts
             TargetSquare = 0;
         }
     }
+
+    public class MeleePhaseResult : PhaseResult
+    {
+        public int TargetSquare = 0;
+
+        public MeleePhaseResult()
+        {
+            PhaseNumber = PhaseEnum.MeleePhase;
+        }
+
+        public override void Clear()
+        {
+            base.Clear();
+            TargetSquare = 0;
+        }
+    }
 }

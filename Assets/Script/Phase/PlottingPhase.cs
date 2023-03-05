@@ -40,7 +40,7 @@ namespace FantacticsScripts
 
         public override void End()
         {
-            GameSceneManager.Instance.SendPlottingPhaseResult(result);
+            GameSceneManager.Instance.SendPhaseResult(result);
 
             CardOperation.Instance.OnMouseButtonLongPress -= mouseButtonLongPressEventHandler;
             CardOperation.Instance.OnMouseButtonDown -= mouseButtonDownEventHandler;

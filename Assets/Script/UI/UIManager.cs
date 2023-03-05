@@ -20,6 +20,7 @@ namespace FantacticsScripts
         [SerializeField] GameObject rangeMeleePhaseUI = default;
 
         [SerializeField] GameObject directionButtons = default;
+        [SerializeField] Button decideButton = default;
 
         [SerializeField] PhaseNotice phaseNotice = default;
 
@@ -45,7 +46,6 @@ namespace FantacticsScripts
                 case PhaseEnum.RangePhase:
                 case PhaseEnum.MeleePhase:
                     rangeMeleePhaseUI.SetActive(on);
-                    directionButtons.SetActive(on);
                     break;
             }
         }
@@ -58,6 +58,12 @@ namespace FantacticsScripts
         public void ShowHandUI(bool isShow)
         {
             handUI.SetActive(isShow);
+        }
+
+        // 位置の設定をできるように
+        public void ShowDecideButton(bool isShow)
+        {
+            decideButton.gameObject.SetActive(isShow);
         }
 
         #region MovePhaseUI

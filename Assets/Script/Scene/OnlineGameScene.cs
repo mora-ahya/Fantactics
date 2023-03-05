@@ -168,9 +168,9 @@ namespace FantacticsScripts
 
                 Player target = players[i];
 
-                int delta = board.GetManhattanDistance(place, target.Information.CurrentSquare);
+                int delta = Board.ManhattanDistance(place, target.Information.CurrentSquare);
 
-                if (delta > cardInfo.maxRange || delta < cardInfo.minRange)
+                if (delta > cardInfo.MaxRange || delta < cardInfo.MinRange)
                     continue;
 
 

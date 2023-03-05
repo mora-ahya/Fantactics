@@ -65,7 +65,7 @@ namespace FantacticsScripts
             if (isDecidingForward)
             {
                 UIManager.Instance.ShowPhaseUI(PhaseEnum.MovePhase, false);
-                GameSceneManager.Instance.SendMovePhaseResult(result);
+                GameSceneManager.Instance.SendPhaseResult(result);
             }
             else
             {

@@ -423,7 +423,7 @@ namespace FantacticsScripts
 
             int tmp = board.GetSquare(targetSquare).GetAdjacentSquare(BoardDirection.Up + n).Number;
 
-            if (board.GetManhattanDistance(startSquare, tmp) > usedCardInformation.maxRange)
+            if (Board.ManhattanDistance(startSquare, tmp) > usedCardInformation.MaxRange)
             {
                 Debug.Log("Over move!");
                 return;
@@ -435,8 +435,8 @@ namespace FantacticsScripts
 
         public void DecideTarget()
         {
-            int dis = board.GetManhattanDistance(startSquare, targetSquare);
-            if (dis > usedCardInformation.maxRange || dis < usedCardInformation.minRange)
+            int dis = Board.ManhattanDistance(startSquare, targetSquare);
+            if (dis > usedCardInformation.MaxRange || dis < usedCardInformation.MinRange)
             {
                 Debug.Log("Over Range!");
                 return;

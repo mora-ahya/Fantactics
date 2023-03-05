@@ -23,7 +23,7 @@ namespace FantacticsScripts
             return false;
         }
 
-        public virtual PhaseResult GetResult()
+        public virtual PhaseResult GetResult() // End形式が出来たら消す
         {
             return null;
         }

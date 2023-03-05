@@ -26,14 +26,24 @@ namespace FantacticsScripts
             this.gameScene = gameScene;
         }
 
-        public void SendPlottingPhaseResult(PlottingPhaseResult plottingPhaseResult)
+        public void SendPhaseResult(PlottingPhaseResult plottingPhaseResult)
         {
             gameScene.OnReceivedPlottingPhaseResult(plottingPhaseResult);
         }
 
-        public void SendMovePhaseResult(MovePhaseResult movePhaseResult)
+        public void SendPhaseResult(MovePhaseResult movePhaseResult)
         {
             gameScene.OnReceivedMovePhaseResult(movePhaseResult);
+        }
+
+        public void SendPhaseResult(RangePhaseResult rangePhaseResult)
+        {
+            gameScene.OnReceivedRangePhaseResult(rangePhaseResult);
+        }
+
+        public void SendPhaseResult(MeleePhaseResult meleePhaseResult)
+        {
+            gameScene.OnReceivedMeleePhaseResult(meleePhaseResult);
         }
     }
 }
