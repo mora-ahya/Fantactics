@@ -16,7 +16,7 @@ namespace FantacticsScripts
         /// <summary>
         /// PlottingPhaseResultを受け取ったときの処理
         /// </summary>
-        public virtual void OnReceivedPlottingPhaseResult(PlottingPhaseResult result)
+        public virtual void OnReceivedPlottingPhaseResult(PlottingResult result)
         {
 
         }
@@ -24,7 +24,7 @@ namespace FantacticsScripts
         /// <summary>
         /// MovePhaseResultを受け取ったときの処理
         /// </summary>
-        public virtual void OnReceivedMovePhaseResult(MovePhaseResult result)
+        public virtual void OnReceivedMovePhaseResult(MoveResult result)
         {
 
         }
@@ -32,15 +32,7 @@ namespace FantacticsScripts
         /// <summary>
         /// RangePhaseResultを受け取ったときの処理
         /// </summary>
-        public virtual void OnReceivedRangePhaseResult(RangePhaseResult result)
-        {
-
-        }
-
-        /// <summary>
-        /// MeleePhaseResultを受け取ったときの処理
-        /// </summary>
-        public virtual void OnReceivedMeleePhaseResult(MeleePhaseResult result)
+        public virtual void OnReceivedRangePhaseResult(AttackResult result)
         {
 
         }

@@ -15,35 +15,24 @@ namespace FantacticsScripts
             Instance = this;
         }
 
-        // Start is called before the first frame update
-        void Start()
-        {
-
-        }
-
         public void SetGameScene(GameScene gameScene)
         {
             this.gameScene = gameScene;
         }
 
-        public void SendPhaseResult(PlottingPhaseResult plottingPhaseResult)
+        public void SendPhaseResult(PlottingResult plottingPhaseResult)
         {
             gameScene.OnReceivedPlottingPhaseResult(plottingPhaseResult);
         }
 
-        public void SendPhaseResult(MovePhaseResult movePhaseResult)
+        public void SendPhaseResult(MoveResult movePhaseResult)
         {
             gameScene.OnReceivedMovePhaseResult(movePhaseResult);
         }
 
-        public void SendPhaseResult(RangePhaseResult rangePhaseResult)
+        public void SendPhaseResult(AttackResult rangePhaseResult)
         {
             gameScene.OnReceivedRangePhaseResult(rangePhaseResult);
-        }
-
-        public void SendPhaseResult(MeleePhaseResult meleePhaseResult)
-        {
-            gameScene.OnReceivedMeleePhaseResult(meleePhaseResult);
         }
     }
 }

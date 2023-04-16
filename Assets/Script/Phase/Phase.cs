@@ -8,24 +8,22 @@ namespace FantacticsScripts
     {
         [SerializeField] protected PhaseManager manager = default;
 
+        public bool IsCompleted { get; protected set; }
+
         public virtual void Initialize(Player player)
         {
 
         }
 
-        public virtual void End()
+        public void Initialize(List<Player> players)
         {
-
+            IsCompleted = false;
+            StartCoroutine(Act(players));
         }
 
-        public virtual bool CanEndPhase()
+        protected virtual IEnumerator Act(List<Player> players)
         {
-            return false;
-        }
-
-        public virtual PhaseResult GetResult() // End形式が出来たら消す
-        {
-            return null;
+            yield return null;
         }
 
         public virtual PhaseEnum GetPhaseEnum()
@@ -36,6 +34,62 @@ namespace FantacticsScripts
         public virtual void Act()
         {
 
+        }
+
+        protected IEnumerator DisplayPhaseNotice()
+        {
+            UIManager.Instance.DisplayPhaseNotice(GetPhaseEnum());
+
+            while (UIManager.Instance.GetPhaseNoticeIsActing())
+            {
+                yield return null;
+            }
+        }
+
+        protected IEnumerator WaitPlayersAction(List<Player> players)
+        {
+            while (CheckAllActingPlayerIsCompleting(players) == false)
+            {
+                yield return null;
+            }
+
+            //OnCompleteWaitPlayers();
+        }
+
+        protected bool CheckAllActingPlayerIsCompleting(List<Player> players)
+        {
+            foreach (Player player in players)
+            {
+                if (player.IsActing)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        protected IEnumerator WaitPlayersMove(List<Player> players)
+        {
+            while (CheckAllMovingPlayerIsCompleting(players) == false)
+            {
+                yield return null;
+            }
+
+            //OnCompleteWaitPlayers();
+        }
+
+        protected bool CheckAllMovingPlayerIsCompleting(List<Player> players)
+        {
+            foreach (Player player in players)
+            {
+                if (player.IsMoving)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

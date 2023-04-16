@@ -15,9 +15,11 @@ namespace FantacticsScripts
 
         public static CameraManager Instance { get; private set; }
 
-        readonly Vector2 yRange = new Vector2(12.5f, 60f);
-        readonly float minXRange = 0f;
-        readonly float minZRange = -11f;
+        Vector2 rangeLimitX = new Vector2();
+        Vector2 rangeLimitY = new Vector2();
+        Vector2 rangeLimitZ = new Vector2();
+
+        float moveSpeed = 0.1f;
 
         public CameraTarget cameraTarget { get; private set; } = null;
         Vector3 positoinTmp = new Vector3();
@@ -29,6 +31,10 @@ namespace FantacticsScripts
         {
             Instance = this;
             mode = FollowMode;
+
+            rangeLimitX.Set(0.0f, Board.Width * Square.Side);
+            rangeLimitY.Set(12.5f, 60.0f);
+            rangeLimitZ.Set(-11.0f, Board.Height * Square.Side + -11.0f);
         }
 
         public void SetPosition(int squareNumber)
@@ -76,12 +82,12 @@ namespace FantacticsScripts
             {
                 positoinTmp.y -= posOffset.normalized.y * Input.mouseScrollDelta.y;
 
-                if (positoinTmp.y >= yRange.x && positoinTmp.y <= yRange.y)
+                if (positoinTmp.y >= rangeLimitY.x && positoinTmp.y <= rangeLimitY.y)
                 {
                     positoinTmp.z -= posOffset.normalized.z * Input.mouseScrollDelta.y;
-                    positoinTmp.z = Mathf.Clamp(positoinTmp.z, minZRange, Board.Height * Square.Side + minZRange);
+                    positoinTmp.z = Mathf.Clamp(positoinTmp.z, rangeLimitZ.x, Board.Height * Square.Side + rangeLimitZ.x);
                 }
-                positoinTmp.y = Mathf.Clamp(positoinTmp.y, yRange.x, yRange.y);
+                positoinTmp.y = Mathf.Clamp(positoinTmp.y, rangeLimitY.x, rangeLimitY.y);
             }
 
             if (Input.GetMouseButtonDown(0))
@@ -95,12 +101,42 @@ namespace FantacticsScripts
                 prePosition.z -= Input.mousePosition.y;
                 positoinTmp += prePosition / 10f;
                 prePosition.Set(Input.mousePosition.x, 0, Input.mousePosition.y);
-                positoinTmp.x = Mathf.Clamp(positoinTmp.x, minXRange, Board.Width * Square.Side);
-                positoinTmp.z = Mathf.Clamp(positoinTmp.z, minZRange, Board.Height * Square.Side + minZRange);
+                positoinTmp.x = Mathf.Clamp(positoinTmp.x, rangeLimitX.x, rangeLimitX.y);
+                positoinTmp.z = Mathf.Clamp(positoinTmp.z, rangeLimitZ.x, rangeLimitZ.y);
             }
 
             if (transform.position != positoinTmp)
                 transform.position = positoinTmp;
+        }
+
+        public void Zoom(float zoomDelta)
+        {
+            positoinTmp = transform.position;
+
+            if (zoomDelta != 0)//まだ未完成
+            {
+                positoinTmp.y -= posOffset.normalized.y * zoomDelta;
+
+                if (positoinTmp.y >= rangeLimitY.x && positoinTmp.y <= rangeLimitY.y)
+                {
+                    positoinTmp.z -= posOffset.normalized.z * zoomDelta;
+                    positoinTmp.z = Mathf.Clamp(positoinTmp.z, rangeLimitZ.x, rangeLimitZ.y);
+                }
+                positoinTmp.y = Mathf.Clamp(positoinTmp.y, rangeLimitY.x, rangeLimitY.y);
+            }
+
+            transform.position = positoinTmp;
+        }
+
+        public void MoveWithinLimits(float moveDeltaX, float moveDeltaY, float moveDeltaZ)
+        {
+            Vector3 posTmp = new Vector3();
+
+            posTmp.x = Mathf.Clamp(transform.position.x + moveDeltaX * moveSpeed, rangeLimitX.x, rangeLimitX.y);
+            posTmp.y = Mathf.Clamp(transform.position.y + moveDeltaY * moveSpeed, rangeLimitY.x, rangeLimitY.y);
+            posTmp.z = Mathf.Clamp(transform.position.z + moveDeltaZ * moveSpeed, rangeLimitZ.x, rangeLimitZ.y);
+
+            transform.position = posTmp;
         }
 
         void FollowMode()
@@ -166,12 +202,12 @@ namespace FantacticsScripts
 
         float CalculateXAxisOfMinReachableRange(float y)
         {
-            return (Board.Width * Square.Side / 2) / (yRange.y - yRange.x) * (y - yRange.x);
+            return (Board.Width * Square.Side / 2) / (rangeLimitY.y - rangeLimitY.x) * (y - rangeLimitY.x);
         }
 
         float CalculateZAxisOfMinReachableRange(float y)
         {
-            return (Board.Height * Square.Side / 2) / (yRange.y - yRange.x) * (y - yRange.x) - 6.5f;
+            return (Board.Height * Square.Side / 2) / (rangeLimitY.y - rangeLimitY.x) * (y - rangeLimitY.x) - 6.5f;
         }
     }
 }

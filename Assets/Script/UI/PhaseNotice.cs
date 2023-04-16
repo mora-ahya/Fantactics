@@ -23,6 +23,11 @@ namespace FantacticsScripts
 
         public void DisplayPhaseNotice(PhaseEnum p)
         {
+            if (gameObject.activeSelf == false)
+            {
+                return;
+            }
+
             switch (p)
             {
                 case PhaseEnum.PlottingPhase:
@@ -41,7 +46,7 @@ namespace FantacticsScripts
                     break;
 
                 case PhaseEnum.MeleePhase:
-                    text.text = StringNameMovePhase;
+                    text.text = StringNameMeleePhase;
                     image.color = Color.red;
                     break;
             }

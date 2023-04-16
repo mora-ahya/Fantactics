@@ -20,6 +20,7 @@ namespace FantacticsScripts
         [SerializeField] GameObject rangeMeleePhaseUI = default;
 
         [SerializeField] GameObject directionButtons = default;
+
         [SerializeField] Button decideButton = default;
 
         [SerializeField] PhaseNotice phaseNotice = default;
@@ -40,7 +41,6 @@ namespace FantacticsScripts
 
                 case PhaseEnum.MovePhase:
                     movePhaseUI.SetActive(on);
-                    directionButtons.SetActive(on);
                     break;
 
                 case PhaseEnum.RangePhase:
@@ -76,6 +76,11 @@ namespace FantacticsScripts
         public void DisplayPhaseNotice(PhaseEnum p)
         {
             phaseNotice.DisplayPhaseNotice(p);
+        }
+
+        public bool GetPhaseNoticeIsActing()
+        {
+            return phaseNotice.IsActing;
         }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 
 namespace FantacticsScripts
 {
-    public class Board : MonoBehaviour, IPointerClickHandler
+    public class Board : MonoBehaviour, IPointerClickHandler, IDragHandler, IScrollHandler
     {
         public readonly static int Width = 11;
         public readonly static int Height = 14;
@@ -120,7 +120,18 @@ namespace FantacticsScripts
             Vector3 vectorTmp = worldPos - basePosition.transform.position;
 
             int width = Mathf.FloorToInt(vectorTmp.x) / (int)Square.Side;
+
+            if (width > Board.Width)
+            {
+                return -1;
+            }
+
             int height = Mathf.FloorToInt(vectorTmp.z) / (int)Square.Side;
+
+            if (height > Board.Height)
+            {
+                return -1;
+            }
 
             return width + height * Board.Width;
         }
@@ -137,6 +148,35 @@ namespace FantacticsScripts
             }
 
             return -1;
+        }
+
+        public bool CheckNeighborSquare(int squareNum1, int squareNum2, out BoardDirection dir)
+        {
+            int diff = squareNum1 - squareNum2;
+
+            if (diff == -1)
+            {
+                dir = BoardDirection.Left;
+            }
+            else if (diff == 1)
+            {
+                dir = BoardDirection.Right;
+            }
+            else if (diff == Board.Width)
+            {
+                dir = BoardDirection.Up;
+            }
+            else if (diff == -Board.Width)
+            {
+                dir = BoardDirection.Down;
+            }
+            else
+            {
+                dir = BoardDirection.Up;
+                return false;
+            }
+
+            return true;
         }
 
         public void Initialize()
@@ -278,8 +318,26 @@ namespace FantacticsScripts
         public void OnPointerClick(PointerEventData eventData)
         {
             Debug.Log("Click");
+
+            if (eventData.dragging)
+            {
+                Debug.Log("press and current are not same");
+                return;
+            }
+            
             Debug.Log("squareNum : " + WorldPositionToSquareNumber(eventData.pointerCurrentRaycast.worldPosition));
             OnPointClickEvent?.Invoke(eventData, WorldPositionToSquareNumber(eventData.pointerCurrentRaycast.worldPosition));
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            Debug.Log("Drag");
+            CameraManager.Instance.MoveWithinLimits(-eventData.delta.x, 0.0f, -eventData.delta.y);
+        }
+
+        public void OnScroll(PointerEventData eventData)
+        {
+            CameraManager.Instance.Zoom(eventData.scrollDelta.y);
         }
     }
 }

@@ -18,12 +18,18 @@ namespace FantacticsScripts
         public int AmountOfDamage = 0;
         public bool IsDamaged = false;
         public readonly Character Chara;
+        public readonly PlottingResult plottingResult;
+        public readonly MoveResult moveResult;
+        public readonly AttackResult attackResult;
         readonly int[] plots;
 
         public PlayerInformation(Character chara)
         {
             Chara = chara;
             plots = new int[2];
+            plottingResult = new PlottingResult(PlayerID);
+            moveResult = new MoveResult(PlayerID);
+            attackResult = new AttackResult(PlayerID);
         }
 
         public void SetCurrentSquare(int num)

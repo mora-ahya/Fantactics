@@ -21,6 +21,8 @@ namespace FantacticsScripts
         int turn;
         int maxPlayer = 1;
 
+        List<Player> actingPlayers = new List<Player>();
+
         void Start()
         {
             board.Initialize();
@@ -35,8 +37,10 @@ namespace FantacticsScripts
 
             GameSceneManager.Instance.SetGameScene(this);
 
+            actingPlayers.Clear();
+            actingPlayers.Add(players[0]);
             // フェーズの設定
-            StartPhase(PhaseEnum.PlottingPhase);
+            StartPhase(actingPlayers, PhaseEnum.PlottingPhase);
 
             //players[0].StartTurn(phases[(int)currentPhase]);
             //RangePhase.ColorSquareInRangeTest(Board.Width * Board.Height / 2 + 5, 3, 5, BoardDirection.Left);
@@ -71,11 +75,10 @@ namespace FantacticsScripts
             }
         }
 
-        void StartPhase(PhaseEnum phaseEnum)
+        void StartPhase(List<Player> players, PhaseEnum phaseEnum)
         {
-            phaseManager.StartPhase(players[0], phaseEnum);
-            UIManager.Instance.DisplayPhaseNotice(phaseEnum);
-            process = PhaseProcess;
+            phaseManager.StartPhase(players, phaseEnum);
+            StartCoroutine(WaitPhaseCompletion(1.0f));
         }
 
         public void SetCharacter(int charaNum)
@@ -92,18 +95,16 @@ namespace FantacticsScripts
             CurrentSegment = 0;
             turn = 0;
             DecideActionOrder(CurrentSegment);
-            AllocateTurn();
         }
 
         /// <summary>
         /// PlottingPhaseResultを受け取ったときの処理
         /// </summary>
-        public override void OnReceivedPlottingPhaseResult(PlottingPhaseResult result)
+        public override void OnReceivedPlottingPhaseResult(PlottingResult result)
         {
             Player player = players[result.PlayerID]; // 適切なプレイヤーをセットする。今は仮
 
-            player.SetPlot(0, result.Actions[0].CardInfo.ID);
-            player.SetPlot(1, result.Actions[1].CardInfo.ID);
+            player.StorePlottingResult(result);
 
             // 本来はAutoPlayerのPlotを決める
             OnDecidedPlayerPlotting();
@@ -112,45 +113,63 @@ namespace FantacticsScripts
         /// <summary>
         /// MovePhaseResultを受け取ったときの処理
         /// </summary>
-        public override void OnReceivedMovePhaseResult(MovePhaseResult result)
+        public override void OnReceivedMovePhaseResult(MoveResult result)
         {
             Player player = players[result.PlayerID];
 
-            player.SetMoveAnimation(result);
-            board.AddPlayerIntoSquare(player, result.DestSquareNum);
-            player.Information.SetCurrentSquare(result.DestSquareNum);
-            player.Information.Direction = result.PlayerForward;
-            StartCoroutine(WaitPlayerMoving(player, 1.0f));
+            player.StoreMoveResult(result);
+
+            //player.SetMoveAnimation(result);
+            //board.AddPlayerIntoSquare(player, result.DestSquareNum);
+            //player.Information.SetCurrentSquare(result.DestSquareNum);
+            //player.Information.Direction = result.PlayerForward;
         }
 
         /// <summary>
         /// RangePhaseResultを受け取ったときの処理
         /// </summary>
-        public override void OnReceivedRangePhaseResult(RangePhaseResult result)
+        public override void OnReceivedRangePhaseResult(AttackResult result)
         {
             Player player = players[result.PlayerID];
 
+            player.StoreAttackResult(result);
             // Animationの設定
             // ダメージ計算
-            StartCoroutine(WaitPlayerMoving(player, 1.0f));
         }
 
-        /// <summary>
-        /// MeleePhaseResultを受け取ったときの処理
-        /// </summary>
-        public override void OnReceivedMeleePhaseResult(MeleePhaseResult result)
-        {
-            Player player = players[result.PlayerID];
+        //public override void OnReceivedMoveResult(MoveResult result)
+        //{
+        //    Player player = players[result.PlayerID];
 
-            // Animationの設定
-            // ダメージ計算
-            StartCoroutine(WaitPlayerMoving(player, 1.0f));
-        }
+        //    player.SetMoveAnimation(result);
+        //    board.AddPlayerIntoSquare(player, result.roadSquares[result.roadSquares.Count]);
+        //    player.Information.SetCurrentSquare(result.roadSquares[result.roadSquares.Count]);
+        //    player.Information.Direction = result.PlayerForward;
+        //    StartCoroutine(WaitPlayerMoving(player, 1.0f));
+        //}
 
         // いずれアニメーション一つにまとめる
         IEnumerator WaitPlayerMoving(Player player, float adjustTime = 0.0f)
         {
             while(player.IsMoving)
+            {
+                yield return null;
+            }
+
+            float delta = 0.0f;
+
+            while (delta < adjustTime)
+            {
+                delta += Time.deltaTime;
+                yield return null;
+            }
+
+            player.SetIsActing(false);
+        }
+
+        IEnumerator WaitPhaseCompletion(float adjustTime = 0.0f)
+        {
+            while (phaseManager.CheckCurrentPhaseIsCompleted() == false)
             {
                 yield return null;
             }
@@ -176,7 +195,7 @@ namespace FantacticsScripts
         /// </summary>
         void TransitionToNextTurn()
         {
-            if (turn != maxPlayer - 1)
+            if (turn != maxPlayer)
             {
                 AllocateTurn();
                 return;
@@ -240,29 +259,32 @@ namespace FantacticsScripts
         {
             currentPlayerID = actionOrder[turn];
             PhaseEnum p = ChangeCardTypeToPhase(players[currentPlayerID].Information.GetPlot(CurrentSegment).Type);
-            PhaseEnum currentPhaseEnum = phaseManager.GetCurrentPhaseEnum();
-            if (currentPhaseEnum != p)
+
+            actingPlayers.Clear();
+
+            for (; turn < maxPlayer; turn++)
             {
-                currentPhaseEnum = p;
-                UIManager.Instance.DisplayPhaseNotice(currentPhaseEnum);
+                Player playerTmp = players[actionOrder[turn]];
+                if (ChangeCardTypeToPhase(playerTmp.Information.GetPlot(CurrentSegment).Type) != p)
+                {
+                    break;
+                }
+
+                actingPlayers.Add(playerTmp);
             }
 
-            if (currentPlayerID == 0)
-            {
-                phaseManager.StartPhase(players[0], currentPhaseEnum);
-            }
-            else
-            {
-                //autoPlayers[currentPlayerID]の行動
-            }
+            StartPhase(actingPlayers, p);
         }
 
         void StartPlottingPhase()
         {
             players[0].ThrowAwayHands();
             players[0].DrawCards(10);
-            phaseManager.StartPhase(players[0], PhaseEnum.PlottingPhase);
-            UIManager.Instance.DisplayPhaseNotice(PhaseEnum.PlottingPhase);
+
+            actingPlayers.Clear();
+            actingPlayers.Add(players[0]);
+
+            StartPhase(actingPlayers, PhaseEnum.PlottingPhase);
             // 手札を捨てる、ドローのアニメーション起動
         }
 

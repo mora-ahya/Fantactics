@@ -6,7 +6,7 @@ namespace FantacticsScripts
 {
     public class DataConverter
     {
-        public static int PlottingPhaseResultToByteArray(PlottingPhaseResult source)
+        public static int PlottingPhaseResultToByteArray(PlottingResult source)
         {
             //result[1] = (byte)actions[0].CardInfo.ID;
             //result[2] = (byte)actions[1].CardInfo.ID;
@@ -14,7 +14,7 @@ namespace FantacticsScripts
             return 0;
         }
 
-        public static int MovePhaseResultToByteArray(MovePhaseResult source)
+        public static int MovePhaseResultToByteArray(MoveResult source)
         {
             //プレイヤーID,移動数,移動方向1~4,移動方向5~8,移動先のマス番号
             //result[1] = (byte)numberOfMoves;

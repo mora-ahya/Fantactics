@@ -10,7 +10,7 @@ namespace FantacticsScripts
     {
         public bool IsRunning { get; private set; }
 
-        readonly protected BoardDirection[] moveDirections = new BoardDirection[8];
+        readonly protected List<int> roadSquares = new List<int>(8);
         Queue<Part> parts;
         GameObject movingObject;
         Board board;
@@ -57,12 +57,11 @@ namespace FantacticsScripts
             this.board = board;
         }
 
-        public void SetAnimation(Player player, MovePhaseResult result)
+        public void SetAnimation(Player player, MoveResult result)
         {
             movingObject = player.gameObject;
-            maxNumberOfMoves = result.NumOfMove;
             currentSquareNumber = player.Information.CurrentSquare;
-            result.MoveDirections.CopyTo(moveDirections, 0);
+            roadSquares.AddRange(result.roadSquares);
             numberOfMoves = 0;
             IsRunning = true;
             //CameraManager.Instance.SetTarget(movingObject);
@@ -75,43 +74,43 @@ namespace FantacticsScripts
             moveAmountBetweenSquares += moveSpeed;
             if (moveAmountBetweenSquares > Square.Side)
             {
-                MoveBetweenSquares(moveDirections[numberOfMoves], moveSpeed - (moveAmountBetweenSquares - Square.Side));
+                //MoveBetweenSquares(moveDirections[numberOfMoves], moveSpeed - (moveAmountBetweenSquares - Square.Side));
                 CalculateNextPoint();
             }
             else
             {
-                MoveBetweenSquares(moveDirections[numberOfMoves], moveSpeed);
+                //MoveBetweenSquares(moveDirections[numberOfMoves], moveSpeed);
             }
         }
 
-        void GenerateAnimationParts(Player player, MovePhaseResult result)
+        void GenerateAnimationParts(Player player, MoveResult result)
         {
-            BoardDirection initDir = result.MoveDirections[0];
-            player.transform.LookAt(Board.GetVectorByDirection(initDir));
+            //BoardDirection initDir = result.MoveDirections[0];
+            //player.transform.LookAt(Board.GetVectorByDirection(initDir));
 
-            int currentSquareNum = player.Information.CurrentSquare;
-            int nextSquareNum = board.GetSquare(currentSquareNum).GetAdjacentSquare(initDir).Number;
+            //int currentSquareNum = player.Information.CurrentSquare;
+            //int nextSquareNum = board.GetSquare(currentSquareNum).GetAdjacentSquare(initDir).Number;
 
-            Vector3 prePos = Board.SquareNumberToWorldPosition(currentSquareNum);
-            Vector3 nextPos = (prePos + Board.SquareNumberToWorldPosition(nextSquareNum)) / 2.0f;
+            //Vector3 prePos = Board.SquareNumberToWorldPosition(currentSquareNum);
+            //Vector3 nextPos = (prePos + Board.SquareNumberToWorldPosition(nextSquareNum)) / 2.0f;
 
-            parts.Enqueue(new GoStraight(in prePos, in nextPos, true));
+            //parts.Enqueue(new GoStraight(in prePos, in nextPos, true));
 
-            for (int i = 1; i < result.MoveDirections.Length; i++)
-            {
-                prePos = nextPos;
-                if (result.MoveDirections[i] == result.MoveDirections[i - 1])
-                {
-                    nextPos = prePos + Board.GetVectorByDirection(result.MoveDirections[i]) * Square.Side;
-                    parts.Enqueue(new GoStraight(in prePos, in nextPos));
-                }
-                else
-                {
-                    Vector3 center = prePos + Board.GetVectorByDirection(result.MoveDirections[i - 1]) * Square.Side / 2.0f;
-                    nextPos = center + Board.GetVectorByDirection(result.MoveDirections[i]) * Square.Side / 2.0f;
-                    parts.Enqueue(new Turn(in prePos, in nextPos, in center));
-                }
-            }
+            //for (int i = 1; i < result.MoveDirections.Length; i++)
+            //{
+            //    prePos = nextPos;
+            //    if (result.MoveDirections[i] == result.MoveDirections[i - 1])
+            //    {
+            //        nextPos = prePos + Board.GetVectorByDirection(result.MoveDirections[i]) * Square.Side;
+            //        parts.Enqueue(new GoStraight(in prePos, in nextPos));
+            //    }
+            //    else
+            //    {
+            //        Vector3 center = prePos + Board.GetVectorByDirection(result.MoveDirections[i - 1]) * Square.Side / 2.0f;
+            //        nextPos = center + Board.GetVectorByDirection(result.MoveDirections[i]) * Square.Side / 2.0f;
+            //        parts.Enqueue(new Turn(in prePos, in nextPos, in center));
+            //    }
+            //}
 
             //最後の半歩を追加
         }
@@ -149,8 +148,8 @@ namespace FantacticsScripts
             prePosition.Set(movingObject.transform.localPosition.x, movingObject.transform.localPosition.y, movingObject.transform.localPosition.z);
 
             // Boardを参照できるようにする
-            currentSquareNumber = board.GetSquare(currentSquareNumber).GetAdjacentSquare(moveDirections[numberOfMoves]).Number;
-            Board.SquareNumberToWorldPosition(board.GetSquare(currentSquareNumber).GetAdjacentSquare(moveDirections[numberOfMoves + 1]).Number, ref nextPosition);
+            //currentSquareNumber = board.GetSquare(currentSquareNumber).GetAdjacentSquare(moveDirections[numberOfMoves]).Number;
+            //Board.SquareNumberToWorldPosition(board.GetSquare(currentSquareNumber).GetAdjacentSquare(moveDirections[numberOfMoves + 1]).Number, ref nextPosition);
             numberOfMoves++;
             moveAmountBetweenSquares = 0f;
         }

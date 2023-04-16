@@ -10,27 +10,27 @@ public interface IManagerBase
     void Act();
 }
 
-class ManagerBaseComparer : IComparer<IManagerBase>
-{
-    public int Compare(IManagerBase mb1, IManagerBase mb2)
-    {
-        if (mb1.ActPriority < mb2.ActPriority)
-        {
-            return 1;
-        }
-        else if (mb1.ActPriority > mb2.ActPriority)
-        {
-            return -1;
-        }
-        else
-        {
-            return 0;
-        }
-    }
-}
-
 public class ManagerParent : MonoBehaviour
 {
+    class ManagerBaseComparer : IComparer<IManagerBase>
+    {
+        public int Compare(IManagerBase mb1, IManagerBase mb2)
+        {
+            if (mb1.ActPriority < mb2.ActPriority)
+            {
+                return 1;
+            }
+            else if (mb1.ActPriority > mb2.ActPriority)
+            {
+                return -1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+    }
+
     public static ManagerParent Instance { get; private set; }
 
     readonly List<IManagerBase> managerList = new List<IManagerBase>();
@@ -41,27 +41,13 @@ public class ManagerParent : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null)
+        {
+            Destroy(this);
+            return;
+        }
+        Instance = this;
         Initialize();
-    }
-
-    IEnumerator AwakeInitialize()
-    {
-        gameObject.GetComponents<IManagerBase>(managerList);
-        managerList.Sort(comparer);
-
-        foreach (IManagerBase managerBase in managerList)
-        {
-            managerBase.AwakeInitialize();
-            yield return null;
-        }
-
-        foreach (IManagerBase managerBase in managerList)
-        {
-            managerBase.LateAwakeInitialize();
-            yield return null;
-        }
-
-        IsStarted = true;
     }
 
     // Update is called once per frame
@@ -76,6 +62,14 @@ public class ManagerParent : MonoBehaviour
         }
     }
 
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
     void Clear()
     {
         managerList.Clear();
@@ -84,13 +78,7 @@ public class ManagerParent : MonoBehaviour
 
     public void Initialize()
     {
-        if (Instance != null)
-        {
-            Instance.Clear();
-        }
-
-        Instance = this;
-
+        Instance.Clear();
         StartCoroutine(AwakeInitialize());
     }
 
@@ -114,7 +102,27 @@ public class ManagerParent : MonoBehaviour
     public T MakeManager<T>() where T : Component, IManagerBase
     {
         T tmp = gameObject.AddComponent<T>();
-        managerList.Add(tmp);
+        AddManager(tmp);
         return tmp;
+    }
+
+    IEnumerator AwakeInitialize()
+    {
+        gameObject.GetComponents<IManagerBase>(managerList);
+        managerList.Sort(comparer);
+
+        foreach (IManagerBase managerBase in managerList)
+        {
+            managerBase.AwakeInitialize();
+        }
+
+        yield return null;
+
+        foreach (IManagerBase managerBase in managerList)
+        {
+            managerBase.LateAwakeInitialize();
+        }
+
+        IsStarted = true;
     }
 }

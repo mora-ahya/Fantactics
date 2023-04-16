@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace FantacticsScripts
 {
@@ -8,7 +9,7 @@ namespace FantacticsScripts
     {
         public static CardOperation Instance { get; private set; }
 
-        public delegate void MouseButtonUpEventHandler(ref Card selectedCard, ref Card heldCard);
+        public delegate void MouseButtonUpEventHandler(Card targetCard, PointerEventData eventData, ref bool isResetPosition);
         public event MouseButtonUpEventHandler OnMouseButtonUp;
 
         public delegate void MouseButtonDownEventHandler(ref Card selectedCard, ref Card heldCard, ref Vector3 clickPoint);
@@ -18,9 +19,7 @@ namespace FantacticsScripts
         public event MouseButtonLongPressEventHandler OnMouseButtonLongPress;
 
         public int NumberOfHands { get; set; } = 0;
-        Card heldCard;
         Card selectedCard;
-        Vector3 clickPoint;
         [SerializeField] Card[] handObjects = default; //一番手札が多いキャラクターに合わせる
 
         void Awake()
@@ -35,20 +34,7 @@ namespace FantacticsScripts
 
         public void Act()
         {
-            if (Input.GetMouseButtonUp(0))
-            {
-                OnMouseButtonUp?.Invoke(ref selectedCard, ref heldCard);
-            }
-
-            if (!Input.GetMouseButton(0))
-                return;
-
-            if (Input.GetMouseButtonDown(0))
-            {
-                OnMouseButtonDown?.Invoke(ref selectedCard, ref heldCard, ref clickPoint);
-            }
-
-            OnMouseButtonLongPress?.Invoke(ref selectedCard, ref heldCard, clickPoint);
+            
         }
 
         public Card GetHandsObject(int index)
@@ -68,6 +54,39 @@ namespace FantacticsScripts
             {
                 handObjects[i].ResetPosition(half);
             }
+        }
+
+        public void OnPointerDown(Card targetCard, PointerEventData eventData)
+        {
+            if (selectedCard != null)
+            {
+                selectedCard.Emphasize(false);
+            }
+
+            selectedCard = targetCard;
+            targetCard.Emphasize(true);
+        }
+
+        public void OnDrag(Card targetCard, PointerEventData eventData)
+        {
+            targetCard.transform.position = eventData.position;
+        }
+
+        public void OnPointerUp(Card targetCard, PointerEventData eventData)
+        {
+            if (selectedCard != targetCard)
+                return;
+
+            bool isResetPosition = true;
+            OnMouseButtonUp?.Invoke(targetCard, eventData, ref isResetPosition);
+
+            if (isResetPosition)
+            {
+                selectedCard.ResetPosition((CardOperation.Instance.NumberOfHands - 1) / 2f);
+                selectedCard.Emphasize(false);
+            }
+
+            selectedCard = null;
         }
 
         /*

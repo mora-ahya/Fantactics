@@ -8,18 +8,18 @@ namespace FantacticsScripts
 {
     public class Player : MonoBehaviour
     {
-        System.Action phase;
-
         public PlayerInformation Information { get; private set; }
         public bool IsMoving { get { return mover.IsMoving; } }
+
+        public bool IsAttacking { get; protected set; } = false;
+        public bool IsActing { get; protected set; } = false;
+        public bool IsClient { get; protected set; } = true;
         [SerializeField] Board board = default;
         [SerializeField] OfflineGameScene gameScene = default;
-        [SerializeField] PhaseManager phaseManager = default;
         [SerializeField] PlayerMover mover = default;
 
         public void Initialize(PlayerInformation pInfo)
         {
-            phase = null;
             //DrawCards();
             Information = pInfo;
             Information.Deck = (1 << Information.Chara.Hp) - 1;
@@ -36,51 +36,70 @@ namespace FantacticsScripts
             
         }
 
+        public void SetIsActing(bool isAc)
+        {
+            IsActing = isAc;
+        }
+
         public void SetPlot(int plotNum, int cardId)
         {
             Information.SetPlot(plotNum, cardId);
         }
 
-        public void SetMoveAnimation(MovePhaseResult movePhaseResult)
+        public void SetMoveAnimation(MoveResult movePhaseResult)
         {
-            this.SetMoveAnimation(movePhaseResult.MoveDirections, movePhaseResult.NumOfMove, movePhaseResult.PlayerForward);
+            this.SetMoveAnimation(movePhaseResult.roadSquares, movePhaseResult.PlayerForward);
         }
 
-        public void SetMoveAnimation(BoardDirection[] moveDirectionsSource, int numOfMove, BoardDirection lastDirection)
+        public void SetMoveAnimation(List<int> roadSquaresSource, BoardDirection lastDirection)
         {
-            mover.SetAnimationForDirection(moveDirectionsSource, numOfMove, lastDirection);
+            mover.SetAnimationForDirection(roadSquaresSource, lastDirection);
         }
 
-        public void StorePlottingPhaseResult()
+        public void StorePlottingResult(PlottingResult result)
         {
-            PhaseResult resultTmp = phaseManager.GetPhaseResult(PhaseEnum.PlottingPhase);
-
-            if (resultTmp == null)
-            {
-                return;
-            }
-
-            PlottingPhaseResult result = (PlottingPhaseResult)resultTmp;
-
             Information.SetPlot(0, result.Actions[0].CardInfo.ID);
             Information.SetPlot(1, result.Actions[1].CardInfo.ID);
 
-            gameScene.OnDecidedPlayerPlotting();
+            IsActing = false;
         }
 
-        public void StoreMovePhaseResult(MovePhaseResult result)
+        public void StoreMoveResult(MoveResult result)
+        {
+            if (Information.moveResult != result)
+            {
+                Information.moveResult.Copy(result);
+            }
+            IsActing = false;
+        }
+
+        public void ApplyMoveResult()
         {
             //fieldAnimation.SetMoveAnimation(this, result);
             //プレイヤーによってマス位置を変える(向き次第)
+            List<int> listTmp = Information.moveResult.roadSquares;
+            SetMoveAnimation(Information.moveResult);
             board.GetSquare(Information.CurrentSquare).RemovePlayer();
-            Information.SetCurrentSquare(result.DestSquareNum);
-            board.GetSquare(result.DestSquareNum).AddPlayer(Information.PlayerID);
+            Information.SetCurrentSquare(listTmp[listTmp.Count - 1]);
+            board.GetSquare(listTmp[listTmp.Count - 1]).AddPlayer(Information.PlayerID);
+            Information.Direction = Information.moveResult.PlayerForward;
             //process = AnimationProcess;
         }
 
-        public void StoreRangePhaseResult(RangePhaseResult result)
+        public void StoreAttackResult(AttackResult result)
         {
+            if (Information.attackResult != result)
+            {
+                Information.attackResult.Copy(result);
+            }
+            IsActing = false;
             //process = AnimationProcess;
+        }
+
+        public void ApplyAttackResult()
+        {
+            IsAttacking = true;
+            IsAttacking = false;
         }
 
         /// <summary>
@@ -140,6 +159,51 @@ namespace FantacticsScripts
         public Vector3 GetCharacterHeadPosition()
         {
             return Information.Chara.HeadPosition + transform.position;
+        }
+
+        public bool CanMoveBeforeMeleeAttack()
+        {
+            return true;
+        }
+
+        public void StartAction(PhaseEnum phaseEnum, int step)
+        {
+            switch (phaseEnum)
+            {
+                case PhaseEnum.PlottingPhase:
+                    Information.plottingResult.Clear();
+                    Information.plottingResult.Initialize(phaseEnum);
+                    PhaseOperationManager.Instance.ActivePlottingOperation(this, Information.plottingResult);
+                    break;
+
+                case PhaseEnum.MovePhase:
+                    Information.moveResult.Clear();
+                    Information.moveResult.Initialize(phaseEnum);
+                    PhaseOperationManager.Instance.ActiveMoveOnBoardOperation(this, GetPlot().Power, Information.CurrentSquare, Information.moveResult);
+                    break;
+
+                case PhaseEnum.RangePhase:
+                    Information.attackResult.Clear();
+                    Information.attackResult.Initialize(phaseEnum);
+                    PhaseOperationManager.Instance.ActiveAttackOnBoardOperation(this, Information.attackResult);
+                    break;
+
+                case PhaseEnum.MeleePhase:
+                    if (step == 0)
+                    {
+                        Information.moveResult.Clear();
+                        Information.moveResult.Initialize(phaseEnum);
+                        PhaseOperationManager.Instance.ActiveMoveOnBoardOperation(this, 0, Information.CurrentSquare, Information.moveResult);
+                    }
+                    else if (step == 1)
+                    {
+                        Information.attackResult.Clear();
+                        Information.attackResult.Initialize(phaseEnum);
+                        PhaseOperationManager.Instance.ActiveAttackOnBoardOperation(this, Information.attackResult);
+                    }
+                    break;
+            }
+            IsActing = true;
         }
 
         /// <summary>

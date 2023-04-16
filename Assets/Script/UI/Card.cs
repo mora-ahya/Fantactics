@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace FantacticsScripts
 {
-    public class Card : MonoBehaviour
+    public class Card : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
     {
         public readonly static float Width = 200f;
         public readonly static float Height = 300f;
@@ -60,6 +61,21 @@ namespace FantacticsScripts
                     isEmphasized = false;
                 }
             }
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            CardOperation.Instance.OnPointerDown(this, eventData);
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            CardOperation.Instance.OnDrag(this, eventData);
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            CardOperation.Instance.OnPointerUp(this, eventData);
         }
     }
 }
