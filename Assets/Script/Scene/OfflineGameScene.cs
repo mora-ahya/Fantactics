@@ -28,12 +28,15 @@ namespace FantacticsScripts
             board.Initialize();
             //board.ChangeRedBitFlag(board.GetSquare(3).GetAdjacentSquare(BoardDirection.Right).Number, true);
             //board.ApplayRedBitFlag();
+            Debug();
+        }
+
+        void Debug()
+        {
             actionOrder = new int[6] { 0, 1, 2, 3, 4, 5 };
 
             players[0].Initialize(new PlayerInformation(new TestCharacter()));
             players[0].DrawCards(10);
-
-            phaseManager.Initialize(this, players[0]);
 
             GameSceneManager.Instance.SetGameScene(this);
 

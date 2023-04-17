@@ -13,19 +13,9 @@ namespace FantacticsScripts
     public class PhaseManager : MonoBehaviour
     {
         [SerializeField] Phase[] phases = default;
-        GameScene gameScene;
-        Player selfPlayer;
         Phase currentPhase;
 
-        List<Player> phasePlayers = new List<Player>();
-
-        public void Initialize(GameScene scene, Player sPlayer)
-        {
-            gameScene = scene;
-            selfPlayer = sPlayer;
-        }
-
-        public void Act()
+        public void Initialize()
         {
             
         }
@@ -33,11 +23,6 @@ namespace FantacticsScripts
         public void ActPhase()
         {
             currentPhase?.Act();
-        }
-
-        public Phase GetPhase(PhaseEnum phaseEnum)
-        {
-            return phases[(int)phaseEnum];
         }
 
         public bool CheckCurrentPhaseIsCompleted()
